@@ -14,10 +14,12 @@ import net.runelite.api.GameState;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.input.KeyManager;
+import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.Text;
@@ -40,20 +42,31 @@ public class EssenceRunningPlugin extends Plugin {
 	@Inject
 	private ShiftClickInputListener inputListener;
 
+	@Inject
+	private MouseManager mouseManager;
+
 	@Setter
 	private boolean shiftModifier = false;
 
 	private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
 
-
 	@Override
 	protected void startUp() throws Exception {
 		keyManager.registerKeyListener(inputListener);
+		mouseManager.registerMouseListener(inputListener);
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
 		keyManager.unregisterKeyListener(inputListener);
+		mouseManager.unregisterMouseListener(inputListener);
+	}
+
+	@Subscribe
+	public void onFocusChanged(FocusChanged event) {
+		if (!event.isFocused()) {
+			shiftModifier = false;
+		}
 	}
 
 	@Provides

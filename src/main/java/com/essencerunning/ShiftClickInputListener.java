@@ -1,11 +1,13 @@
 package com.essencerunning;
 
 import net.runelite.client.input.KeyListener;
+import net.runelite.client.input.MouseAdapter;
 
 import javax.inject.Inject;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 
-public class ShiftClickInputListener implements KeyListener {
+public class ShiftClickInputListener extends MouseAdapter implements KeyListener {
 
     @Inject
     private EssenceRunningPlugin plugin;
@@ -27,5 +29,11 @@ public class ShiftClickInputListener implements KeyListener {
         if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
             plugin.setShiftModifier(false);
         }
+    }
+
+    @Override
+    public MouseEvent mouseEntered(final MouseEvent mouseEvent) {
+        plugin.setShiftModifier(mouseEvent.isShiftDown());
+        return mouseEvent;
     }
 }
