@@ -30,7 +30,7 @@ public enum EssenceRunningItem {
     ;
 
     private final String name;
-    private final int quantity;
+    private final int withdrawQuantity;
 
     private static final Map<String, EssenceRunningItem> map = new HashMap<>(values().length);
 
@@ -40,17 +40,17 @@ public enum EssenceRunningItem {
         }
     }
 
-    EssenceRunningItem(String name, int quantity) {
+    EssenceRunningItem(String name, int withdrawQuantity) {
         this.name = name;
-        this.quantity = quantity;
+        this.withdrawQuantity = withdrawQuantity;
     }
 
     public String getName() {
         return name;
     }
 
-    public int getQuantity() {
-        return quantity;
+    public int getWithdrawQuantity() {
+        return withdrawQuantity;
     }
 
     public static EssenceRunningItem of(String name) {
