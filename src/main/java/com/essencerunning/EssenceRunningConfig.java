@@ -5,15 +5,23 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("essencerunning")
-public interface EssenceRunningConfig extends Config
-{
+public interface EssenceRunningConfig extends Config {
+
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+			keyName = "swapBankOp",
+			name = "Swap Bank Op",
+			description = "Swaps the extra menu option in banks (Wield, Eat, etc.) when holding shift"
 	)
-	default String greeting()
-	{
-		return "Hello";
+	default boolean swapBankOp() {
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "swapERBankQuantityOp",
+			name = "Swap ER Bank Quantity Op",
+			description = "Swaps the Withdraw/Deposit quantity of certain items (Ring of dueling, Binding necklace, etc.) when holding shift"
+	)
+	default boolean swapERBankQuantityOp() {
+		return false;
 	}
 }
