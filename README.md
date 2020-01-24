@@ -1,3 +1,4 @@
+![](https://i.imgur.com/W01NA9z.png)
 # Essence Running
 
 ## Background
