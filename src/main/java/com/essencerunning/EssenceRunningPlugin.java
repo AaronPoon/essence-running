@@ -63,33 +63,32 @@ public class EssenceRunningPlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onFocusChanged(FocusChanged event) {
+	public void onFocusChanged(final FocusChanged event) {
 		if (!event.isFocused()) {
 			shiftModifier = false;
 		}
 	}
 
 	@Provides
-	EssenceRunningConfig provideConfig(ConfigManager configManager) {
+	EssenceRunningConfig provideConfig(final ConfigManager configManager) {
 		return configManager.getConfig(EssenceRunningConfig.class);
 	}
 
 	@Subscribe
-	public void onClientTick(ClientTick clientTick) {
+	public void onClientTick(final ClientTick clientTick) {
 
-		// The menu is not rebuilt when it is open, so don't swap or else it will
-		// repeatedly swap entries
+		// The menu is not rebuilt when it is open, so don't swap or else it will repeatedly swap entries
 		if (client.getGameState() != GameState.LOGGED_IN || client.isMenuOpen()) {
 			return;
 		}
 
-		MenuEntry[] menuEntries = client.getMenuEntries();
+		final MenuEntry[] menuEntries = client.getMenuEntries();
 
 		// Build option map for quick lookup in findIndex
 		int idx = 0;
 		optionIndexes.clear();
 		for (MenuEntry entry : menuEntries) {
-			String option = Text.removeTags(entry.getOption()).toLowerCase();
+			final String option = Text.removeTags(entry.getOption()).toLowerCase();
 			optionIndexes.put(option, idx++);
 		}
 
@@ -100,7 +99,7 @@ public class EssenceRunningPlugin extends Plugin {
 		}
 	}
 
-	private void swapMenuEntry(int index, MenuEntry menuEntry) {
+	private void swapMenuEntry(final int index, final MenuEntry menuEntry) {
 
 		final String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
 		final String target = Text.removeTags(menuEntry.getTarget()).toLowerCase();
@@ -108,29 +107,89 @@ public class EssenceRunningPlugin extends Plugin {
 		if (config.swapOfferAll() && shiftModifier && option.equals("offer")) {
 			swap("offer-all", option, target, index, true);
 		}
+
+		if (config.shiftClickCustomization() && shiftModifier && option.equals("examine")) {
+			shiftClickCustomization(target, index);
+		}
 	}
 
-	private void swap(String optionA, String optionB, String target, int index, boolean strict) {
+	private void shiftClickCustomization(final String target, final int index) {
 
-		MenuEntry[] menuEntries = client.getMenuEntries();
+		String optionA = null;
 
-		int thisIndex = findIndex(menuEntries, index, optionB, target, strict);
-		int optionIdx = findIndex(menuEntries, thisIndex, optionA, target, strict);
+		if (target.equals("pure essence")) {
+			optionA = config.pureEssence().getOption();
+		}
+		else if (target.equals("small pouch") || target.equals("medium pouch") || target.equals("large pouch") || target.equals("giant pouch")) {
+			optionA = config.essencePouch().getOption();
+		}
+		else if (target.equals("binding necklace")) {
+			optionA = config.bindingNecklace().getOption();
+		}
+		else if (target.startsWith("ring of dueling")) {
+			optionA = config.ringOfDueling().getOption();
+		}
+		else if (target.startsWith("stamina potion")) {
+			optionA = config.staminaPotion().getOption();
+		}
+		else if (target.startsWith("energy potion")) {
+			optionA = config.staminaPotion().getOption();
+		}
+		else if (target.equals("earth talisman")) {
+			optionA = config.earthTalisman().getOption();
+		}
+		else if (target.startsWith("crafting cape")) {
+			optionA = config.craftingCape().getOption();
+		}
+
+		if (optionA != null) {
+			swapPrevious(optionA.toLowerCase(), target, index);
+		}
+	}
+
+	private void swapPrevious(final String optionA, // the desired option
+							  final String target,
+							  final int index) { // the index of examine
+
+		if (index > 0) {
+			// examine is always the last option for an item and the one before it is the default displayed option
+			final MenuEntry previousEntry = client.getMenuEntries()[index - 1];
+			final String previousOption = Text.removeTags(previousEntry.getOption()).toLowerCase();
+			final String previousTarget = Text.removeTags(previousEntry.getTarget()).toLowerCase();
+
+			if (target.equals(previousTarget) && !optionA.equals(previousOption)) {
+				swap(optionA, previousOption, target, index - 1, true);
+			}
+		}
+	}
+
+	private void swap(final String optionA,
+					  final String optionB,
+					  final String target,
+					  final int index,
+					  final boolean strict) {
+
+		final MenuEntry[] menuEntries = client.getMenuEntries();
+		final int thisIndex = findIndex(menuEntries, index, optionB, target, strict);
+		final int optionIdx = findIndex(menuEntries, thisIndex, optionA, target, strict);
 
 		if (thisIndex >= 0 && optionIdx >= 0) {
 			swap(optionIndexes, menuEntries, optionIdx, thisIndex);
 		}
 	}
 
-	private int findIndex(MenuEntry[] entries, int limit, String option, String target, boolean strict) {
+	private int findIndex(final MenuEntry[] entries,
+						  final int limit,
+						  final String option,
+						  final String target,
+						  final boolean strict) {
 
 		if (strict) {
 			List<Integer> indexes = optionIndexes.get(option);
 
-			// We want the last index which matches the target, as that is what is top-most
-			// on the menu
+			// We want the last index which matches the target, as that is what is top-most on the menu
 			for (int i = indexes.size() - 1; i >= 0; --i) {
-				int idx = indexes.get(i);
+				final int idx = indexes.get(i);
 				MenuEntry entry = entries[idx];
 				String entryTarget = Text.removeTags(entry.getTarget()).toLowerCase();
 
@@ -143,9 +202,9 @@ public class EssenceRunningPlugin extends Plugin {
 		else {
 			// Without strict matching we have to iterate all entries up to the current limit...
 			for (int i = limit; i >= 0; i--) {
-				MenuEntry entry = entries[i];
-				String entryOption = Text.removeTags(entry.getOption()).toLowerCase();
-				String entryTarget = Text.removeTags(entry.getTarget()).toLowerCase();
+				final MenuEntry entry = entries[i];
+				final String entryOption = Text.removeTags(entry.getOption()).toLowerCase();
+				final String entryTarget = Text.removeTags(entry.getTarget()).toLowerCase();
 
 				if (entryOption.contains(option.toLowerCase()) && entryTarget.equals(target)) {
 					return i;
@@ -157,9 +216,12 @@ public class EssenceRunningPlugin extends Plugin {
 		return -1;
 	}
 
-	private void swap(ArrayListMultimap<String, Integer> optionIndexes, MenuEntry[] entries, int index1, int index2) {
+	private void swap(final ArrayListMultimap<String, Integer> optionIndexes,
+					  final MenuEntry[] entries,
+					  final int index1,
+					  final int index2) {
 
-		MenuEntry entry = entries[index1];
+		final MenuEntry entry = entries[index1];
 		entries[index1] = entries[index2];
 		entries[index2] = entry;
 
@@ -169,25 +231,24 @@ public class EssenceRunningPlugin extends Plugin {
 		optionIndexes.clear();
 		int idx = 0;
 		for (MenuEntry menuEntry : entries) {
-			String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
+			final String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
 			optionIndexes.put(option, idx++);
 		}
 	}
 
 	@Subscribe
-	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded) {
+	public void onMenuEntryAdded(final MenuEntryAdded menuEntryAdded) {
 
 		// The client sorts the MenuEntries for priority after the ClientTick event so have to swap bank in MenuEntryAdded event
 		if (config.swapBankOp()) {
 			swapBankOp(menuEntryAdded);
 		}
 		if (config.swapBankWithdrawOp()) {
-			// Technically Withdraw-1 is always the same priority as current withdraw amount but Withdraw-X is a lower priority
 			swapBankWithdrawOp(menuEntryAdded);
 		}
 	}
 
-	private void swapBankWithdrawOp(MenuEntryAdded menuEntryAdded) {
+	private void swapBankWithdrawOp(final MenuEntryAdded menuEntryAdded) {
 
 		final String target = Text.removeTags(menuEntryAdded.getTarget()).toLowerCase();
 		final EssenceRunningItem item = EssenceRunningItem.of(target);
@@ -196,12 +257,12 @@ public class EssenceRunningPlugin extends Plugin {
 		if (item != null && shiftModifier && menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 1
 				&& menuEntryAdded.getOption().startsWith("Withdraw-")) {
 
-			MenuEntry[] menuEntries = client.getMenuEntries();
+			final MenuEntry[] menuEntries = client.getMenuEntries();
 			final String withdrawQuantity = "Withdraw-" + item.getWithdrawQuantity();
 
 			// Find the custom withdraw quantity option
 			for (int i = menuEntries.length - 1; i >= 0; --i) {
-				MenuEntry entry = menuEntries[i];
+				final MenuEntry entry = menuEntries[i];
 
 				if (entry.getOption().equals(withdrawQuantity)) {
 					menuEntries[i] = menuEntries[menuEntries.length - 1];
@@ -214,17 +275,17 @@ public class EssenceRunningPlugin extends Plugin {
 		}
 	}
 
-	private void swapBankOp(MenuEntryAdded menuEntryAdded) {
+	private void swapBankOp(final MenuEntryAdded menuEntryAdded) {
 
 		// Deposit- op 2 is the current deposit amount 1/5/10/x
 		if (shiftModifier && menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 2
 				&& menuEntryAdded.getOption().startsWith("Deposit-")) {
 
-			MenuEntry[] menuEntries = client.getMenuEntries();
+			final MenuEntry[] menuEntries = client.getMenuEntries();
 
 			// Find the extra menu option; they don't have fixed names, so check based on the menu identifier
 			for (int i = menuEntries.length - 1; i >= 0; --i) {
-				MenuEntry entry = menuEntries[i];
+				final MenuEntry entry = menuEntries[i];
 
 				// The extra options are always option 9
 				if (entry.getType() == MenuAction.CC_OP_LOW_PRIORITY.getId() && entry.getIdentifier() == 9
