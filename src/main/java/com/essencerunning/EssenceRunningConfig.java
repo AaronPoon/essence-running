@@ -31,7 +31,7 @@ public interface EssenceRunningConfig extends Config {
 			position = 2,
 			keyName = "swapBankWithdrawOp",
 			name = "Swap Bank Withdraw Op",
-			description = "Swaps the Withdraw/Deposit quantity of certain items (Ring of dueling, Binding necklace, etc.) when holding shift"
+			description = "Swaps the Withdraw quantity of certain items (Ring of dueling, Binding necklace, etc.) when holding shift"
 	)
 	default boolean swapBankWithdrawOp() {
 		return false;
