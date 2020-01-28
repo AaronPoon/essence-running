@@ -108,7 +108,7 @@ public class EssenceRunningPlugin extends Plugin {
 			swap("offer-all", option, target, index, true);
 		}
 
-		if (config.shiftClickCustomization() && shiftModifier && option.equals("examine")) {
+		if (config.shiftClickCustomization() && shiftModifier && menuEntry.getType() == MenuAction.EXAMINE_ITEM.getId()) {
 			shiftClickCustomization(target, index);
 		}
 	}
