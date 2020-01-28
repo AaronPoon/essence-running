@@ -32,6 +32,12 @@ public class ShiftClickInputListener extends MouseAdapter implements KeyListener
     }
 
     @Override
+    public MouseEvent mousePressed(MouseEvent mouseEvent) {
+        plugin.setShiftModifier(mouseEvent.isShiftDown());
+        return mouseEvent;
+    }
+
+    @Override
     public MouseEvent mouseEntered(final MouseEvent mouseEvent) {
         plugin.setShiftModifier(mouseEvent.isShiftDown());
         return mouseEvent;
