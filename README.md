@@ -26,25 +26,33 @@ When the 'Shift' key is pressed, `shiftModifier` is set to `true` and when the '
 RuneLite handles this problem by simply always setting the `shiftModifier` back to `false` whenever it loses focus.
 ```java
 @Subscribe
-	public void onFocusChanged(FocusChanged event)
-	{
-		if (!event.isFocused())
-		{
-			shiftModifier = false;
-		}
-	}
+public void onFocusChanged(FocusChanged event)
+{
+    if (!event.isFocused())
+    {
+        shiftModifier = false;
+    }
+}
 ```
 However, this has the opposite problem that can occur if RuneLite loses focus, 'Shift' is never released, and RuneLite regains focus while you are still physically pressing down 'Shift'. According to `shiftModifier`, you are not pressing 'Shift' so all the custom shift-click options are lost, even though you are still physically pressing 'Shift'.
 
 This is entirely not desirable when you consider the Altscaping nature of essence runners. Therefore, I had to work around this limitation by introducing a `MouseListener` to my version of `ShiftClickInputListener`.
 ```java
 @Override
-    public MouseEvent mouseEntered(final MouseEvent mouseEvent) {
-        plugin.setShiftModifier(mouseEvent.isShiftDown());
-        return mouseEvent;
-    }
+public MouseEvent mousePressed(MouseEvent mouseEvent) {
+    plugin.setShiftModifier(mouseEvent.isShiftDown());
+    return mouseEvent;
+}
+
+@Override
+public MouseEvent mouseEntered(final MouseEvent mouseEvent) {
+    plugin.setShiftModifier(mouseEvent.isShiftDown());
+    return mouseEvent;
+}
 ```
-This simply re-sets the `shiftModifier` whenever the mouse cursor enters the RuneLite client, regardless of whether the client has focus or not. Thus, regardless of what happened to the 'Shift' key while RuneLite was not in focus, whenever you position your mouse back into RuneLite, it will recalculate what `shiftModifier` should really be.
+The 'mouseEntered' event simply re-sets the `shiftModifier` whenever the mouse cursor enters the RuneLite client, regardless of whether the client has focus or not. Thus, regardless of what happened to the 'Shift' key while RuneLite was not in focus, whenever you position your mouse back into RuneLite, it will recalculate what `shiftModifier` should really be.
+
+In addition, 'mousePressed' is also needed in the situation where you enter the RuneLite client without 'Shift' being pressed and you press 'Shift' before the client regains focus. This will allow you have utilize the shift-click options even in this scenario. The tooltip will initially display the incorrect default click option but when you press the mouse, it will correctly swap to the shift-click option.
 
 However, being as this is an external plugin, I can't utilize this new feature and also use the existing 'Customizable shift-click' feature in RuneLite. Alas, if there are any features that I wish to use in RuneLite's MenuEntrySwapperPlugin, I will have to clone them.
 
@@ -62,6 +70,19 @@ Swaps the 'Withdraw-' quantity to 'Withdraw-1' in banks of the following items w
 * Stamina potion (1,2,3,4)
 * Ring of dueling(1,2,3,4,5,6,7,8)
 * Earth talisman (swaps to 'Withdraw-2' if and only if '2' was the most recently used 'Withdraw-X' quantity
+
+### Highlight Binding necklace
+Highlights 'Binding necklace' in your inventory upon selected criteria:
+* Off (turn the feature off)
+* Equipped (if you do not have an item equipped in your amulet slot)
+* 25 (if the trade screen displays your trading partner has 25 free inventory slots)
+* 26 (if the trade screen displays your trading partner has 26 free inventory slots)
+
+### Highlight Ring of dueling
+Highlights all 'Ring of dueling(8)' in the bank interface with a red border if you do not have an item equipped in your ring slot.
+
+### Highlight Trade Sent
+Highlights chat box with a red border to indicate there is currently not an active trade request. Upon successfully sending a trade offer request, the border will change to green.
 
 ### Customizable shift-click
 Allows customization of shift-clicks on items. A clone of the existing 'Customizable shift-click' in RuneLite to make use of the enhanced shift-click input listener. However, rather than completely cloning the entire framework, I simply limited the customization of shift-click items to the ones associated with essence running. These can be configured in the plugin directly:
