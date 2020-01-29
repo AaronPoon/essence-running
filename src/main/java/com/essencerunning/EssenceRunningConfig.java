@@ -14,17 +14,18 @@ public interface EssenceRunningConfig extends Config {
 			description = "Swaps the 'Offer' option to 'Offer-All' when holding shift"
 	)
 	default boolean swapOfferAll() {
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
 			position = 1,
 			keyName = "swapBankOp",
 			name = "Swap Bank Op",
-			description = "Swaps the extra menu option in banks (Wield, Eat, etc.) when holding shift"
+			description = "Swaps the extra menu option in banks (Wield, Eat, etc.) when holding shift",
+			warning = "Disable MenuEntrySwapper's 'Swap Bank Op' to exclude 'Empty' from the swap"
 	)
 	default boolean swapBankOp() {
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
@@ -34,7 +35,37 @@ public interface EssenceRunningConfig extends Config {
 			description = "Swaps the Withdraw quantity of certain items (Ring of dueling, Binding necklace, etc.) when holding shift"
 	)
 	default boolean swapBankWithdrawOp() {
-		return false;
+		return true;
+	}
+
+	@ConfigItem(
+			position = 3,
+			keyName = "highlightBindingNecklace",
+			name = "Highlight Binding necklace",
+			description = "Highlights Binding necklace if you have no amulet equipped or the Runecrafter has 25/26 slots available in trade"
+	)
+	default EssenceRunningItemDropdown.HighlightBindingNecklace highlightBindingNecklace() {
+		return EssenceRunningItemDropdown.HighlightBindingNecklace.TWENTY_FIVE;
+	}
+
+	@ConfigItem(
+			position = 4,
+			keyName = "highlightRingOfDueling",
+			name = "Highlight Ring of dueling",
+			description = "Highlights Ring of dueling(8) if you have no ring equipped"
+	)
+	default boolean highlightRingOfDueling() {
+		return true;
+	}
+
+	@ConfigItem(
+			position = 5,
+			keyName = "highlightTradeSent",
+			name = "Highlight Trade Sent",
+			description = "Highlights chat box to green if trade offer has been successfully sent"
+	)
+	default boolean highlightTradeSent() {
+		return true;
 	}
 
 	@ConfigItem(
@@ -53,8 +84,8 @@ public interface EssenceRunningConfig extends Config {
 			name = "Pure essence",
 			description = "Customize shift-click of 'Pure essence' in inventory"
 	)
-	default EssenceRunningItemShiftClick.RingOfDueling pureEssence() {
-		return EssenceRunningItemShiftClick.RingOfDueling.USE;
+	default EssenceRunningItemDropdown.RingOfDueling pureEssence() {
+		return EssenceRunningItemDropdown.RingOfDueling.USE;
 	}
 
 	@ConfigItem(
@@ -63,8 +94,8 @@ public interface EssenceRunningConfig extends Config {
 			name = "Essence pouch",
 			description = "Customize shift-click of 'Essence pouch' in inventory"
 	)
-	default EssenceRunningItemShiftClick.EssencePouch essencePouch() {
-		return EssenceRunningItemShiftClick.EssencePouch.EMPTY;
+	default EssenceRunningItemDropdown.EssencePouch essencePouch() {
+		return EssenceRunningItemDropdown.EssencePouch.EMPTY;
 	}
 
 	@ConfigItem(
@@ -73,8 +104,8 @@ public interface EssenceRunningConfig extends Config {
 			name = "Binding necklace",
 			description = "Customize shift-click of 'Binding necklace' in inventory"
 	)
-	default EssenceRunningItemShiftClick.BindingNecklace bindingNecklace() {
-		return EssenceRunningItemShiftClick.BindingNecklace.USE;
+	default EssenceRunningItemDropdown.BindingNecklace bindingNecklace() {
+		return EssenceRunningItemDropdown.BindingNecklace.USE;
 	}
 
 	@ConfigItem(
@@ -83,8 +114,8 @@ public interface EssenceRunningConfig extends Config {
 			name = "Ring of dueling",
 			description = "Customize shift-click of 'Ring of dueling' in inventory"
 	)
-	default EssenceRunningItemShiftClick.RingOfDueling ringOfDueling() {
-		return EssenceRunningItemShiftClick.RingOfDueling.WEAR;
+	default EssenceRunningItemDropdown.RingOfDueling ringOfDueling() {
+		return EssenceRunningItemDropdown.RingOfDueling.WEAR;
 	}
 
 	@ConfigItem(
@@ -93,8 +124,8 @@ public interface EssenceRunningConfig extends Config {
 			name = "Stamina potion",
 			description = "Customize shift-click of 'Stamina potion' and 'Energy potion' in inventory"
 	)
-	default EssenceRunningItemShiftClick.StaminaPotion staminaPotion() {
-		return EssenceRunningItemShiftClick.StaminaPotion.DRINK;
+	default EssenceRunningItemDropdown.StaminaPotion staminaPotion() {
+		return EssenceRunningItemDropdown.StaminaPotion.DRINK;
 	}
 
 	@ConfigItem(
@@ -103,8 +134,8 @@ public interface EssenceRunningConfig extends Config {
 			name = "Earth talisman",
 			description = "Customize shift-click of 'Earth talisman' in inventory"
 	)
-	default EssenceRunningItemShiftClick.EarthTalisman earthTalisman() {
-		return EssenceRunningItemShiftClick.EarthTalisman.USE;
+	default EssenceRunningItemDropdown.EarthTalisman earthTalisman() {
+		return EssenceRunningItemDropdown.EarthTalisman.USE;
 	}
 
 	@ConfigItem(
@@ -113,7 +144,7 @@ public interface EssenceRunningConfig extends Config {
 			name = "Crafting cape",
 			description = "Customize shift-click of 'Crafting cape' in inventory"
 	)
-	default EssenceRunningItemShiftClick.CraftingCape craftingCape() {
-		return EssenceRunningItemShiftClick.CraftingCape.TELEPORT;
+	default EssenceRunningItemDropdown.CraftingCape craftingCape() {
+		return EssenceRunningItemDropdown.CraftingCape.TELEPORT;
 	}
 }

@@ -4,24 +4,35 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 import net.runelite.api.Client;
+import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameState;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.FocusChanged;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 @Slf4j
@@ -29,6 +40,8 @@ import net.runelite.client.util.Text;
 	name = "Essence Running"
 )
 public class EssenceRunningPlugin extends Plugin {
+
+	private static final String SENDING_TRADE_OFFER = "Sending trade offer...";
 
 	@Inject
 	private Client client;
@@ -40,26 +53,43 @@ public class EssenceRunningPlugin extends Plugin {
 	private KeyManager keyManager;
 
 	@Inject
+	private MouseManager mouseManager;
+
+	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
 	private ShiftClickInputListener inputListener;
 
 	@Inject
-	private MouseManager mouseManager;
+	private EssenceRunningOverlay overlay;
 
 	@Setter
 	private boolean shiftModifier = false;
 
 	private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
 
+	@Getter
+	private boolean ringEquipped = false;
+
+	@Getter
+	private boolean amuletEquipped = false;
+
+	@Getter
+	private boolean tradeSent = false;
+
 	@Override
 	protected void startUp() throws Exception {
 		keyManager.registerKeyListener(inputListener);
 		mouseManager.registerMouseListener(inputListener);
+		overlayManager.add(overlay);
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
 		keyManager.unregisterKeyListener(inputListener);
 		mouseManager.unregisterMouseListener(inputListener);
+		overlayManager.remove(overlay);
 	}
 
 	@Subscribe
@@ -303,4 +333,50 @@ public class EssenceRunningPlugin extends Plugin {
 			}
 		}
 	}
+
+	@Subscribe
+	public void onGameStateChanged(final GameStateChanged event) {
+		if (event.getGameState() == GameState.LOGIN_SCREEN) {
+			tradeSent = false;
+		}
+		else if (event.getGameState() == GameState.LOGGED_IN) {
+			amuletEquipped = itemEquipped(EquipmentInventorySlot.AMULET);
+			ringEquipped = itemEquipped(EquipmentInventorySlot.RING);
+		}
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(final ItemContainerChanged event) {
+		if (event.getItemContainer() == client.getItemContainer(InventoryID.EQUIPMENT)) {
+			amuletEquipped = itemEquipped(EquipmentInventorySlot.AMULET);
+			ringEquipped = itemEquipped(EquipmentInventorySlot.RING);
+		}
+	}
+
+	private boolean itemEquipped(final EquipmentInventorySlot slot) {
+		final ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
+		if (equipment != null) {
+			final Item[] item = equipment.getItems();
+			if (item.length > slot.getSlotIdx()
+				&& item[slot.getSlotIdx()] != null
+				&& item[slot.getSlotIdx()].getId() > -1) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Subscribe
+	public void onChatMessage(final ChatMessage event) {
+		if (event.getMessage().equals(SENDING_TRADE_OFFER)) {
+			tradeSent = true;
+		}
+	}
+
+    @Subscribe
+    public void onWidgetLoaded(final WidgetLoaded event) {
+        if (event.getGroupId() == WidgetID.PLAYER_TRADE_SCREEN_GROUP_ID) {
+            tradeSent = false;
+        }
+    }
 }
