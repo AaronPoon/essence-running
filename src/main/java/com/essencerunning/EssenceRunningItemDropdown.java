@@ -3,7 +3,7 @@ package com.essencerunning;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-public class EssenceRunningItemShiftClick {
+public class EssenceRunningItemDropdown {
 
     @Getter
     @RequiredArgsConstructor
@@ -78,5 +78,21 @@ public class EssenceRunningItemShiftClick {
         DROP("Drop");
 
         private final String option;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    public enum HighlightBindingNecklace {
+        OFF("Off"),
+        EQUIPPED("Equipped"),
+        TWENTY_FIVE("25"),
+        TWENTY_SIX("26");
+
+        private final String option;
+
+        @Override
+        public String toString() {
+            return this.option;
+        }
     }
 }
