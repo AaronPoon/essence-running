@@ -13,7 +13,7 @@ The plugin hub can be browsed in the client by scrolling to the bottom of the co
 ## Purpose
 There exists an entire community of OSRS players dedicated to running pure essence to a Runecrafter to boost their Runecrafting experience. The purpose of this plugin is to improve the QoL for essence runners.
 
-This community can be found here: http://discord.gg/er
+This community can be found here: http://discord.gg/8Rznqh5
 
 ## API
 ### Enhanced ShiftClickInputListener
