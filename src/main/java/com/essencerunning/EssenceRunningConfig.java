@@ -54,7 +54,7 @@ public interface EssenceRunningConfig extends Config {
 			description = "Highlights chat box to green if trade offer has been successfully sent"
 	)
 	default boolean highlightTradeSent() {
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
