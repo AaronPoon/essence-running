@@ -84,7 +84,7 @@ public class EssenceRunningItemDropdown {
     @RequiredArgsConstructor
     public enum HighlightBindingNecklace {
         OFF("Off"),
-        EQUIPPED("Equipped"),
+        EQUIP("Equip"),
         TWENTY_FIVE("25"),
         TWENTY_SIX("26");
 

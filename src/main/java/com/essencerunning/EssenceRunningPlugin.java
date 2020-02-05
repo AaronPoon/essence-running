@@ -8,26 +8,27 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
-
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.ObjectID;
+import net.runelite.api.Skill;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.MenuShouldLeftClick;
+import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
@@ -42,6 +43,9 @@ import net.runelite.client.util.Text;
 public class EssenceRunningPlugin extends Plugin {
 
 	private static final String SENDING_TRADE_OFFER = "Sending trade offer...";
+	private static final String ACCEPTED_TRADE = "Accepted trade.";
+	private static final String CRAFTED_FIRE_RUNES = "You bind the temple's power into fire runes.";
+	private static final int FIRE_RUNE_EXPERIENCE = 7;
 
 	@Inject
 	private Client client;
@@ -64,10 +68,16 @@ public class EssenceRunningPlugin extends Plugin {
 	@Inject
 	private EssenceRunningOverlay overlay;
 
+	@Inject
+	private EssenceRunningStatisticsOverlay statisticsOverlay;
+
 	@Setter
 	private boolean shiftModifier = false;
 
 	private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
+
+	@Getter
+	private EssenceRunningSession session;
 
 	@Getter
 	private boolean ringEquipped = false;
@@ -78,11 +88,16 @@ public class EssenceRunningPlugin extends Plugin {
 	@Getter
 	private boolean tradeSent = false;
 
+	private int runecraftXp = 0;
+	private boolean craftedFireRunes = false;
+
 	@Override
 	protected void startUp() throws Exception {
 		keyManager.registerKeyListener(inputListener);
 		mouseManager.registerMouseListener(inputListener);
 		overlayManager.add(overlay);
+		overlayManager.add(statisticsOverlay);
+		session = new EssenceRunningSession();
 	}
 
 	@Override
@@ -90,6 +105,8 @@ public class EssenceRunningPlugin extends Plugin {
 		keyManager.unregisterKeyListener(inputListener);
 		mouseManager.unregisterMouseListener(inputListener);
 		overlayManager.remove(overlay);
+		overlayManager.remove(statisticsOverlay);
+		session = null;
 	}
 
 	@Subscribe
@@ -135,7 +152,7 @@ public class EssenceRunningPlugin extends Plugin {
 		final String target = Text.removeTags(menuEntry.getTarget()).toLowerCase();
 
 		if (config.swapOfferAll() && shiftModifier && option.equals("offer")) {
-			swap("offer-all", option, target, index, true);
+			EssenceRunningUtils.swap(client, optionIndexes, "offer-all", option, target, index, true);
 		}
 
 		if (config.shiftClickCustomization() && shiftModifier && menuEntry.getType() == MenuAction.EXAMINE_ITEM.getId()) {
@@ -173,164 +190,26 @@ public class EssenceRunningPlugin extends Plugin {
 		}
 
 		if (optionA != null) {
-			swapPrevious(optionA.toLowerCase(), target, index);
-		}
-	}
-
-	private void swapPrevious(final String optionA, // the desired option
-							  final String target,
-							  final int index) { // the index of examine
-
-		if (index > 0) {
-			// examine is always the last option for an item and the one before it is the default displayed option
-			final MenuEntry previousEntry = client.getMenuEntries()[index - 1];
-			final String previousOption = Text.removeTags(previousEntry.getOption()).toLowerCase();
-			final String previousTarget = Text.removeTags(previousEntry.getTarget()).toLowerCase();
-
-			if (target.equals(previousTarget) && !optionA.equals(previousOption)) {
-				swap(optionA, previousOption, target, index - 1, true);
-			}
-		}
-	}
-
-	private void swap(final String optionA,
-					  final String optionB,
-					  final String target,
-					  final int index,
-					  final boolean strict) {
-
-		final MenuEntry[] menuEntries = client.getMenuEntries();
-		final int thisIndex = findIndex(menuEntries, index, optionB, target, strict);
-		final int optionIdx = findIndex(menuEntries, thisIndex, optionA, target, strict);
-
-		if (thisIndex >= 0 && optionIdx >= 0) {
-			swap(optionIndexes, menuEntries, optionIdx, thisIndex);
-		}
-	}
-
-	private int findIndex(final MenuEntry[] entries,
-						  final int limit,
-						  final String option,
-						  final String target,
-						  final boolean strict) {
-
-		if (strict) {
-			List<Integer> indexes = optionIndexes.get(option);
-
-			// We want the last index which matches the target, as that is what is top-most on the menu
-			for (int i = indexes.size() - 1; i >= 0; --i) {
-				final int idx = indexes.get(i);
-				MenuEntry entry = entries[idx];
-				String entryTarget = Text.removeTags(entry.getTarget()).toLowerCase();
-
-				// Limit to the last index which is prior to the current entry
-				if (idx <= limit && entryTarget.equals(target)) {
-					return idx;
-				}
-			}
-		}
-		else {
-			// Without strict matching we have to iterate all entries up to the current limit...
-			for (int i = limit; i >= 0; i--) {
-				final MenuEntry entry = entries[i];
-				final String entryOption = Text.removeTags(entry.getOption()).toLowerCase();
-				final String entryTarget = Text.removeTags(entry.getTarget()).toLowerCase();
-
-				if (entryOption.contains(option.toLowerCase()) && entryTarget.equals(target)) {
-					return i;
-				}
-			}
-
-		}
-
-		return -1;
-	}
-
-	private void swap(final ArrayListMultimap<String, Integer> optionIndexes,
-					  final MenuEntry[] entries,
-					  final int index1,
-					  final int index2) {
-
-		final MenuEntry entry = entries[index1];
-		entries[index1] = entries[index2];
-		entries[index2] = entry;
-
-		client.setMenuEntries(entries);
-
-		// Rebuild option indexes
-		optionIndexes.clear();
-		int idx = 0;
-		for (MenuEntry menuEntry : entries) {
-			final String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
-			optionIndexes.put(option, idx++);
+			EssenceRunningUtils.swapPrevious(client, optionIndexes, optionA.toLowerCase(), target, index);
 		}
 	}
 
 	@Subscribe
 	public void onMenuEntryAdded(final MenuEntryAdded menuEntryAdded) {
-
 		// The client sorts the MenuEntries for priority after the ClientTick event so have to swap bank in MenuEntryAdded event
-		if (config.swapBankOp()) {
-			swapBankOp(menuEntryAdded);
+		if (config.swapBankOp() && shiftModifier) {
+			EssenceRunningUtils.swapBankOp(client, menuEntryAdded);
 		}
-		if (config.swapBankWithdrawOp()) {
-			swapBankWithdrawOp(menuEntryAdded);
-		}
-	}
-
-	private void swapBankWithdrawOp(final MenuEntryAdded menuEntryAdded) {
-
-		final String target = Text.removeTags(menuEntryAdded.getTarget()).toLowerCase();
-		final EssenceRunningItem item = EssenceRunningItem.of(target);
-
-		// Withdraw- op 1 is the current withdraw amount 1/5/10/x
-		if (item != null && shiftModifier && menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 1
-				&& menuEntryAdded.getOption().startsWith("Withdraw-")) {
-
-			final MenuEntry[] menuEntries = client.getMenuEntries();
-			final String withdrawQuantity = "Withdraw-" + item.getWithdrawQuantity();
-
-			// Find the custom withdraw quantity option
-			for (int i = menuEntries.length - 1; i >= 0; --i) {
-				final MenuEntry entry = menuEntries[i];
-
-				if (entry.getOption().equals(withdrawQuantity)) {
-					menuEntries[i] = menuEntries[menuEntries.length - 1];
-					menuEntries[menuEntries.length - 1] = entry;
-
-					client.setMenuEntries(menuEntries);
-					break;
-				}
-			}
+		if (config.swapBankWithdrawOp() && shiftModifier) {
+			EssenceRunningUtils.swapBankWithdrawOp(client, menuEntryAdded);
 		}
 	}
 
-	private void swapBankOp(final MenuEntryAdded menuEntryAdded) {
-
-		// Deposit- op 2 is the current deposit amount 1/5/10/x
-		if (shiftModifier && menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 2
-				&& menuEntryAdded.getOption().startsWith("Deposit-")) {
-
-			final MenuEntry[] menuEntries = client.getMenuEntries();
-
-			// Find the extra menu option; they don't have fixed names, so check based on the menu identifier
-			for (int i = menuEntries.length - 1; i >= 0; --i) {
-				final MenuEntry entry = menuEntries[i];
-
-				// The extra options are always option 9
-				if (entry.getType() == MenuAction.CC_OP_LOW_PRIORITY.getId() && entry.getIdentifier() == 9
-						&& !entry.getOption().equals("Empty")) { // exclude Runecraft pouch's "Empty" option
-
-					// we must also raise the priority of the op so it doesn't get sorted later
-					entry.setType(MenuAction.CC_OP.getId());
-
-					menuEntries[i] = menuEntries[menuEntries.length - 1];
-					menuEntries[menuEntries.length - 1] = entry;
-
-					client.setMenuEntries(menuEntries);
-					break;
-				}
-			}
+	@Subscribe
+	public void onMenuShouldLeftClick(final MenuShouldLeftClick menuShouldLeftClick) {
+		if (config.preventFireRunes()) {
+			// Option is 'Craft-rune' on the Fire Altar
+			EssenceRunningUtils.forceRightClick(client, menuShouldLeftClick, ObjectID.ALTAR_34764);
 		}
 	}
 
@@ -338,38 +217,37 @@ public class EssenceRunningPlugin extends Plugin {
 	public void onGameStateChanged(final GameStateChanged event) {
 		if (event.getGameState() == GameState.LOGIN_SCREEN) {
 			tradeSent = false;
+			session.reset();
+			runecraftXp = 0;
+			craftedFireRunes = false;
 		}
 		else if (event.getGameState() == GameState.LOGGED_IN) {
-			amuletEquipped = itemEquipped(EquipmentInventorySlot.AMULET);
-			ringEquipped = itemEquipped(EquipmentInventorySlot.RING);
+			amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
+			ringEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.RING);
 		}
 	}
 
 	@Subscribe
 	public void onItemContainerChanged(final ItemContainerChanged event) {
 		if (event.getItemContainer() == client.getItemContainer(InventoryID.EQUIPMENT)) {
-			amuletEquipped = itemEquipped(EquipmentInventorySlot.AMULET);
-			ringEquipped = itemEquipped(EquipmentInventorySlot.RING);
+			amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
+			ringEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.RING);
 		}
-	}
-
-	private boolean itemEquipped(final EquipmentInventorySlot slot) {
-		final ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
-		if (equipment != null) {
-			final Item[] item = equipment.getItems();
-			if (item.length > slot.getSlotIdx()
-				&& item[slot.getSlotIdx()] != null
-				&& item[slot.getSlotIdx()].getId() > -1) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Subscribe
 	public void onChatMessage(final ChatMessage event) {
 		if (event.getMessage().equals(SENDING_TRADE_OFFER)) {
 			tradeSent = true;
+		}
+		else if (event.getMessage().equals(ACCEPTED_TRADE)) {
+			if (config.sessionStatistics()) {
+				// Trade widgets are still available at this point
+				EssenceRunningUtils.computeItemsTraded(client, session);
+			}
+		}
+		else if (event.getMessage().equals(CRAFTED_FIRE_RUNES)) {
+			craftedFireRunes = true;
 		}
 	}
 
@@ -379,4 +257,26 @@ public class EssenceRunningPlugin extends Plugin {
             tradeSent = false;
         }
     }
+
+    @Subscribe
+    public void onConfigChanged(final ConfigChanged event) {
+		if (event.getGroup().equals("essencerunning")) {
+			if (!config.sessionStatistics() && (!session.getRunners().isEmpty() || session.getTotalFireRunesCrafted() != 0)) {
+				session.reset();
+			}
+		}
+	}
+
+	@Subscribe
+	public void onStatChanged(final StatChanged statChanged) {
+		if (statChanged.getSkill() == Skill.RUNECRAFT) {
+			if (config.sessionStatistics()) {
+				if (craftedFireRunes) {
+					session.updateCrafterStatistic((statChanged.getXp() - runecraftXp) / FIRE_RUNE_EXPERIENCE);
+					craftedFireRunes = false;
+				}
+				runecraftXp = statChanged.getXp();
+			}
+		}
+	}
 }

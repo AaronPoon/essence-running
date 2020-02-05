@@ -9,37 +9,26 @@ public interface EssenceRunningConfig extends Config {
 
 	@ConfigItem(
 			position = 0,
-			keyName = "swapOfferAll",
-			name = "Swap Offer-All",
-			description = "Swaps the 'Offer' option to 'Offer-All' when holding shift"
+			keyName = "sessionStatistics",
+			name = "Session Statistics",
+			description = "Displays statistics such as Pure essence/Binding necklace traded per runner and Fire runes crafted"
 	)
-	default boolean swapOfferAll() {
-		return true;
+	default boolean sessionStatistics() {
+		return false;
 	}
 
 	@ConfigItem(
 			position = 1,
-			keyName = "swapBankOp",
-			name = "Swap Bank Op",
-			description = "Swaps the extra menu option in banks (Wield, Eat, etc.) when holding shift",
-			warning = "Disable MenuEntrySwapper's 'Swap Bank Op' to exclude 'Empty' from the swap"
+			keyName = "preventFireRunes",
+			name = "Prevent Fire runes",
+			description = "Forces menu to open when you click the Fire Altar if you would accidentally craft Fire runes"
 	)
-	default boolean swapBankOp() {
-		return true;
+	default boolean preventFireRunes() {
+		return false;
 	}
 
 	@ConfigItem(
 			position = 2,
-			keyName = "swapBankWithdrawOp",
-			name = "Swap Bank Withdraw Op",
-			description = "Swaps the Withdraw quantity of certain items (Ring of dueling, Binding necklace, etc.) when holding shift"
-	)
-	default boolean swapBankWithdrawOp() {
-		return true;
-	}
-
-	@ConfigItem(
-			position = 3,
 			keyName = "highlightBindingNecklace",
 			name = "Highlight Binding necklace",
 			description = "Highlights Binding necklace if you have no amulet equipped or the Runecrafter has 25/26 slots available in trade"
@@ -49,7 +38,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 4,
+			position = 3,
 			keyName = "highlightRingOfDueling",
 			name = "Highlight Ring of dueling",
 			description = "Highlights Ring of dueling(8) if you have no ring equipped"
@@ -59,7 +48,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 5,
+			position = 4,
 			keyName = "highlightTradeSent",
 			name = "Highlight Trade Sent",
 			description = "Highlights chat box to green if trade offer has been successfully sent"
@@ -70,6 +59,36 @@ public interface EssenceRunningConfig extends Config {
 
 	@ConfigItem(
 			position = 10,
+			keyName = "swapOfferAll",
+			name = "Swap Offer-All",
+			description = "Swaps the 'Offer' option to 'Offer-All' when holding shift"
+	)
+	default boolean swapOfferAll() {
+		return true;
+	}
+
+	@ConfigItem(
+			position = 11,
+			keyName = "swapBankOp",
+			name = "Swap Bank Op",
+			description = "Swaps the extra menu option in banks (Wield, Eat, etc.) when holding shift"
+	)
+	default boolean swapBankOp() {
+		return true;
+	}
+
+	@ConfigItem(
+			position = 12,
+			keyName = "swapBankWithdrawOp",
+			name = "Swap Bank Withdraw Op",
+			description = "Swaps the Withdraw quantity of certain items (Ring of dueling, Binding necklace, etc.) when holding shift"
+	)
+	default boolean swapBankWithdrawOp() {
+		return true;
+	}
+
+	@ConfigItem(
+			position = 20,
 			keyName = "shiftClickCustomization",
 			name = "Customizable shift-click",
 			description = "Allows customization of shift-clicks on items below that persist even when RuneLite loses focus"
@@ -79,7 +98,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 11,
+			position = 21,
 			keyName = "pureEssence",
 			name = "Pure essence",
 			description = "Customize shift-click of 'Pure essence' in inventory"
@@ -89,7 +108,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 12,
+			position = 22,
 			keyName = "essencePouch",
 			name = "Essence pouch",
 			description = "Customize shift-click of 'Essence pouch' in inventory"
@@ -99,7 +118,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 13,
+			position = 23,
 			keyName = "bindingNecklace",
 			name = "Binding necklace",
 			description = "Customize shift-click of 'Binding necklace' in inventory"
@@ -109,7 +128,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 14,
+			position = 24,
 			keyName = "ringOfDueling",
 			name = "Ring of dueling",
 			description = "Customize shift-click of 'Ring of dueling' in inventory"
@@ -119,7 +138,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 15,
+			position = 25,
 			keyName = "staminaPotion",
 			name = "Stamina potion",
 			description = "Customize shift-click of 'Stamina potion' and 'Energy potion' in inventory"
@@ -129,7 +148,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 16,
+			position = 26,
 			keyName = "earthTalisman",
 			name = "Earth talisman",
 			description = "Customize shift-click of 'Earth talisman' in inventory"
@@ -139,7 +158,7 @@ public interface EssenceRunningConfig extends Config {
 	}
 
 	@ConfigItem(
-			position = 17,
+			position = 27,
 			keyName = "craftingCape",
 			name = "Crafting cape",
 			description = "Customize shift-click of 'Crafting cape' in inventory"

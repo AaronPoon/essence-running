@@ -1,6 +1,9 @@
 package com.essencerunning;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Shape;
 
 import javax.inject.Inject;
 
@@ -37,26 +40,7 @@ public class EssenceRunningOverlay extends Overlay {
     @Override
     public Dimension render(final Graphics2D graphics) {
 
-        switch(config.highlightBindingNecklace()) {
-            case EQUIPPED:
-                final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
-                if (!plugin.isAmuletEquipped() && !inventory.isHidden()) {
-                    for (final WidgetItem item : inventory.getWidgetItems()) {
-                        if (!item.getWidget().isHidden() && item.getId() == ItemID.BINDING_NECKLACE) {
-                            drawShape(graphics, item.getCanvasBounds(), Color.RED);
-                        }
-                    }
-                }
-                break;
-            case TWENTY_FIVE:
-            case TWENTY_SIX:
-                if (matchFreeInventorySlots()) {
-                    drawWidgetChildren(graphics, client.getWidget(WidgetID.PLAYER_TRADE_INVENTORY_GROUP_ID, 0), ItemID.BINDING_NECKLACE);
-                }
-                break;
-            default:
-                break;
-        }
+        renderBindingNecklace(graphics);
 
         final Widget chatbox = client.getWidget(WidgetInfo.CHATBOX);
         if (config.highlightTradeSent() && chatbox != null && !chatbox.isHidden()) {
@@ -69,6 +53,36 @@ public class EssenceRunningOverlay extends Overlay {
         }
 
         return null;
+    }
+
+    private void renderBindingNecklace(final Graphics2D graphics) {
+        switch(config.highlightBindingNecklace()) {
+            case EQUIP:
+                if (!plugin.isAmuletEquipped()) {
+                    final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
+                    if (!inventory.isHidden()) {
+                        for (final WidgetItem item : inventory.getWidgetItems()) {
+                            if (!item.getWidget().isHidden() && item.getId() == ItemID.BINDING_NECKLACE) {
+                                drawShape(graphics, item.getCanvasBounds(), Color.RED);
+                            }
+                        }
+                    }
+                    else {
+                        drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER), ItemID.BINDING_NECKLACE);
+                        drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER), ItemID.BINDING_NECKLACE);
+                    }
+                }
+                break;
+            case TWENTY_FIVE:
+            case TWENTY_SIX:
+                if (matchFreeInventorySlots()) {
+                    // Widget that contains the inventory while inside a trade transaction
+                    drawWidgetChildren(graphics, client.getWidget(WidgetID.PLAYER_TRADE_INVENTORY_GROUP_ID, 0), ItemID.BINDING_NECKLACE);
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     private void drawWidgetChildren(final Graphics2D graphics, final Widget widget, final int itemId) {
@@ -89,6 +103,7 @@ public class EssenceRunningOverlay extends Overlay {
     }
 
     private boolean matchFreeInventorySlots() {
+        // Widget that contains the trading partner's number of free inventory slots
         final Widget freeSlots = client.getWidget(WidgetID.PLAYER_TRADE_SCREEN_GROUP_ID, 9);
         return freeSlots != null && freeSlots.getText().endsWith(config.highlightBindingNecklace().getOption() + FREE_INVENTORY_SLOTS);
     }
