@@ -94,6 +94,12 @@ Allows customization of shift-clicks on items. A clone of the existing 'Customiz
 * Earth talisman
 * Crafting cape
 
+### Prevent Fire runes
+Forces menu to open when you click the Fire Altar if you would accidentally craft Fire runes.
+
+### Session Statistics
+Displays statistics such as Pure essence/Binding necklace traded per runner and Fire runes crafted.
+
 ## Sticky Keys
 With this plugin, it is entirely possible to run essence with the 'Shift' key pressed at all times. Of course while it is possible to physically press 'Shift' down at all times, it is much simpler to turn on Sticky Keys. You can find many guides on how to use Sticky Keys online but the settings that I use for essence running are:
 ![sticky keys](https://i.imgur.com/G7rKqj0.png)
