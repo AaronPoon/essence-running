@@ -34,7 +34,7 @@ public interface EssenceRunningConfig extends Config {
 			description = "Highlights Binding necklace if you have no amulet equipped or the Runecrafter has 25/26 slots available in trade"
 	)
 	default EssenceRunningItemDropdown.HighlightBindingNecklace highlightBindingNecklace() {
-		return EssenceRunningItemDropdown.HighlightBindingNecklace.TWENTY_FIVE;
+		return EssenceRunningItemDropdown.HighlightBindingNecklace.OFF;
 	}
 
 	@ConfigItem(
@@ -44,7 +44,7 @@ public interface EssenceRunningConfig extends Config {
 			description = "Highlights Ring of dueling(8) if you have no ring equipped"
 	)
 	default boolean highlightRingOfDueling() {
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
@@ -54,6 +54,26 @@ public interface EssenceRunningConfig extends Config {
 			description = "Highlights chat box to green if trade offer has been successfully sent"
 	)
 	default boolean highlightTradeSent() {
+		return false;
+	}
+
+	@ConfigItem(
+			position = 5,
+			keyName = "clanChatOverlay",
+			name = "Clan Chat Overlay",
+			description = "Displays messages in the clan chat as an overlay on top of the chat box"
+	)
+	default boolean clanChatOverlay() {
+		return false;
+	}
+
+	@ConfigItem(
+			position = 6,
+			keyName = "filterTradeMessages",
+			name = "Filter Trade Messages",
+			description = "Filters out all messages in trade chat except for 'wishes to trade with you'"
+	)
+	default boolean filterTradeMessages() {
 		return false;
 	}
 

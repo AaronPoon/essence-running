@@ -8,6 +8,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
+
+import net.runelite.api.ChatLineBuffer;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameState;
@@ -15,6 +19,7 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.ObjectID;
+import net.runelite.api.ScriptID;
 import net.runelite.api.Skill;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
@@ -26,6 +31,7 @@ import net.runelite.api.events.MenuShouldLeftClick;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.WidgetID;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -51,6 +57,9 @@ public class EssenceRunningPlugin extends Plugin {
 	private Client client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
 	private EssenceRunningConfig config;
 
 	@Inject
@@ -71,6 +80,9 @@ public class EssenceRunningPlugin extends Plugin {
 	@Inject
 	private EssenceRunningStatisticsOverlay statisticsOverlay;
 
+	@Inject
+	private EssenceRunningClanChatOverlay clanChatOverlay;
+
 	@Setter
 	private boolean shiftModifier = false;
 
@@ -88,6 +100,9 @@ public class EssenceRunningPlugin extends Plugin {
 	@Getter
 	private boolean tradeSent = false;
 
+	@Getter
+	private Map<Integer, String> clanMessages;
+
 	private int runecraftXp = 0;
 	private boolean craftedFireRunes = false;
 
@@ -97,7 +112,9 @@ public class EssenceRunningPlugin extends Plugin {
 		mouseManager.registerMouseListener(inputListener);
 		overlayManager.add(overlay);
 		overlayManager.add(statisticsOverlay);
+		overlayManager.add(clanChatOverlay);
 		session = new EssenceRunningSession();
+		clanMessages = EssenceRunningUtils.getClanMessagesMap(2);
 	}
 
 	@Override
@@ -106,6 +123,7 @@ public class EssenceRunningPlugin extends Plugin {
 		mouseManager.unregisterMouseListener(inputListener);
 		overlayManager.remove(overlay);
 		overlayManager.remove(statisticsOverlay);
+		overlayManager.remove(clanChatOverlay);
 		session = null;
 	}
 
@@ -220,6 +238,7 @@ public class EssenceRunningPlugin extends Plugin {
 			session.reset();
 			runecraftXp = 0;
 			craftedFireRunes = false;
+			clanMessages.clear();
 		}
 		else if (event.getGameState() == GameState.LOGGED_IN) {
 			amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
@@ -249,6 +268,16 @@ public class EssenceRunningPlugin extends Plugin {
 		else if (event.getMessage().equals(CRAFTED_FIRE_RUNES)) {
 			craftedFireRunes = true;
 		}
+		else if(event.getSender() != null) {
+			final String message = event.getName() + ": " + event.getMessage();
+			clanMessages.put(message.hashCode(), message);
+		}
+
+		if (config.filterTradeMessages() && event.getType() == ChatMessageType.TRADE) {
+			ChatLineBuffer buffer = client.getChatLineMap().get(ChatMessageType.TRADE.getType());
+			buffer.removeMessageNode(event.getMessageNode());
+			clientThread.invoke(() -> client.runScript(ScriptID.BUILD_CHATBOX));
+		}
 	}
 
     @Subscribe
@@ -263,6 +292,9 @@ public class EssenceRunningPlugin extends Plugin {
 		if (event.getGroup().equals("essencerunning")) {
 			if (!config.sessionStatistics() && (!session.getRunners().isEmpty() || session.getTotalFireRunesCrafted() != 0)) {
 				session.reset();
+			}
+			if (!config.clanChatOverlay()) {
+				clanMessages.clear();
 			}
 		}
 	}
