@@ -1,6 +1,8 @@
 package com.essencerunning;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
@@ -208,5 +210,14 @@ public class EssenceRunningUtils {
         if (menuEntry.getIdentifier() == objectId && menuEntry.getType() == MenuAction.GAME_OBJECT_FIRST_OPTION.getId()) {
             menuShouldLeftClick.setForceRightClick(true);
         }
+    }
+
+    public static Map<Integer, String> getClanMessagesMap(final int size) {
+        return new LinkedHashMap<Integer, String>(size) {
+            @Override
+            public boolean removeEldestEntry(Map.Entry<Integer, String> eldest) {
+                return this.size() > size;
+            }
+        };
     }
 }
