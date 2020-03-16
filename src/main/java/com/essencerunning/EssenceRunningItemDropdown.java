@@ -85,8 +85,8 @@ public class EssenceRunningItemDropdown {
     public enum HighlightBindingNecklace {
         OFF("Off"),
         EQUIP("Equip"),
-        TWENTY_FIVE("25"),
-        TWENTY_SIX("26");
+        TWENTY_FIVE("25 (Imbue)"),
+        TWENTY_SIX("26 (Tally)");
 
         private final String option;
 
