@@ -32,12 +32,12 @@ public class EssenceRunningStatisticsOverlay extends Overlay {
     public Dimension render(Graphics2D graphics) {
         panelComponent.getChildren().clear();
 
-        if (config.sessionStatistics()) {
+        if (config.enableRunecrafterMode() && config.sessionStatistics()) {
             final EssenceRunningSession session = plugin.getSession();
 
             panelComponent.getChildren().add(LineComponent.builder().left("Runner").right("Ess/Neck").build());
 
-            session.getRunners().stream().forEach(runner -> panelComponent.getChildren().add(
+            session.getRunners().forEach(runner -> panelComponent.getChildren().add(
                 LineComponent.builder()
                     .left(runner.getRsn())
                     .right(runner.getPureEssenceTraded() + "/" + runner.getBindingNecklaceTraded())
