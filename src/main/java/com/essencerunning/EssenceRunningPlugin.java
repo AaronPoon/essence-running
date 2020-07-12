@@ -2,14 +2,9 @@ package com.essencerunning;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.inject.Provides;
-import javax.inject.Inject;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Map;
-
 import net.runelite.api.ChatLineBuffer;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -42,252 +37,231 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
+import javax.inject.Inject;
+import java.util.Map;
+
 @Slf4j
 @PluginDescriptor(
-	name = "Essence Running"
+    name = "Essence Running"
 )
 public class EssenceRunningPlugin extends Plugin {
 
-	private static final String SENDING_TRADE_OFFER = "Sending trade offer...";
-	private static final String ACCEPTED_TRADE = "Accepted trade.";
-	private static final String CRAFTED_FIRE_RUNES = "You bind the temple's power into fire runes.";
-	private static final int FIRE_RUNE_EXPERIENCE = 7;
+    private static final String SENDING_TRADE_OFFER = "Sending trade offer...";
+    private static final String ACCEPTED_TRADE = "Accepted trade.";
+    private static final String CRAFTED_FIRE_RUNES = "You bind the temple's power into fire runes.";
+    private static final int FIRE_RUNE_EXPERIENCE = 7;
+    private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
+    @Inject
+    private Client client;
+    @Inject
+    private ClientThread clientThread;
+    @Inject
+    private EssenceRunningConfig config;
+    @Inject
+    private KeyManager keyManager;
+    @Inject
+    private MouseManager mouseManager;
+    @Inject
+    private OverlayManager overlayManager;
+    @Inject
+    private ShiftClickInputListener inputListener;
+    @Inject
+    private EssenceRunningOverlay overlay;
+    @Inject
+    private EssenceRunningStatisticsOverlay statisticsOverlay;
+    @Inject
+    private EssenceRunningClanChatOverlay clanChatOverlay;
+    @Setter
+    private boolean shiftModifier = false;
+    @Getter
+    private EssenceRunningSession session;
 
-	@Inject
-	private Client client;
+    @Getter
+    private boolean ringEquipped = false;
 
-	@Inject
-	private ClientThread clientThread;
+    @Getter
+    private boolean amuletEquipped = false;
 
-	@Inject
-	private EssenceRunningConfig config;
+    @Getter
+    private boolean tradeSent = false;
 
-	@Inject
-	private KeyManager keyManager;
+    @Getter
+    private Map<Integer, String> clanMessages;
+    private int MAX_ENTRIES = 0;
 
-	@Inject
-	private MouseManager mouseManager;
+    private int runecraftXp = 0;
+    private boolean craftedFireRunes = false;
 
-	@Inject
-	private OverlayManager overlayManager;
+    @Override
+    protected void startUp() {
+        keyManager.registerKeyListener(inputListener);
+        mouseManager.registerMouseListener(inputListener);
+        overlayManager.add(overlay);
+        overlayManager.add(statisticsOverlay);
+        overlayManager.add(clanChatOverlay);
+        session = new EssenceRunningSession();
+        MAX_ENTRIES = config.clanChatOverlayHeight().getOption();
+        clanMessages = EssenceRunningUtils.getClanMessagesMap(MAX_ENTRIES);
+    }
 
-	@Inject
-	private ShiftClickInputListener inputListener;
+    @Override
+    protected void shutDown() {
+        keyManager.unregisterKeyListener(inputListener);
+        mouseManager.unregisterMouseListener(inputListener);
+        overlayManager.remove(overlay);
+        overlayManager.remove(statisticsOverlay);
+        overlayManager.remove(clanChatOverlay);
+        session = null;
+    }
 
-	@Inject
-	private EssenceRunningOverlay overlay;
+    @Subscribe
+    public void onFocusChanged(final FocusChanged event) {
+        if (!event.isFocused()) {
+            shiftModifier = false;
+        }
+    }
 
-	@Inject
-	private EssenceRunningStatisticsOverlay statisticsOverlay;
+    @Provides
+    EssenceRunningConfig provideConfig(final ConfigManager configManager) {
+        return configManager.getConfig(EssenceRunningConfig.class);
+    }
 
-	@Inject
-	private EssenceRunningClanChatOverlay clanChatOverlay;
+    @Subscribe
+    public void onClientTick(final ClientTick clientTick) {
 
-	@Setter
-	private boolean shiftModifier = false;
+        // The menu is not rebuilt when it is open, so don't swap or else it will repeatedly swap entries
+        if (client.getGameState() != GameState.LOGGED_IN || client.isMenuOpen()) {
+            return;
+        }
 
-	private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
+        final MenuEntry[] menuEntries = client.getMenuEntries();
 
-	@Getter
-	private EssenceRunningSession session;
+        // Build option map for quick lookup in findIndex
+        int idx = 0;
+        optionIndexes.clear();
+        for (MenuEntry entry : menuEntries) {
+            final String option = Text.removeTags(entry.getOption()).toLowerCase();
+            optionIndexes.put(option, idx++);
+        }
 
-	@Getter
-	private boolean ringEquipped = false;
+        // Perform swaps
+        idx = 0;
+        for (MenuEntry entry : menuEntries) {
+            swapMenuEntry(idx++, entry);
+        }
+    }
 
-	@Getter
-	private boolean amuletEquipped = false;
+    private void swapMenuEntry(final int index, final MenuEntry menuEntry) {
 
-	@Getter
-	private boolean tradeSent = false;
+        if (config.shiftClickCustomization() && shiftModifier) {
+            final String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
+            final String target = Text.removeTags(menuEntry.getTarget()).toLowerCase();
 
-	@Getter
-	private Map<Integer, String> clanMessages;
-	private int MAX_ENTRIES = 0;
+            if (config.swapOfferAll() && option.equals("offer")) {
+                EssenceRunningUtils.swap(client, optionIndexes, "offer-all", option, target, index, true);
+            }
 
-	private int runecraftXp = 0;
-	private boolean craftedFireRunes = false;
+            if (menuEntry.getType() == MenuAction.EXAMINE_ITEM.getId()) {
+                shiftClickCustomization(target, index);
+            }
+        }
+    }
 
-	@Override
-	protected void startUp() {
-		keyManager.registerKeyListener(inputListener);
-		mouseManager.registerMouseListener(inputListener);
-		overlayManager.add(overlay);
-		overlayManager.add(statisticsOverlay);
-		overlayManager.add(clanChatOverlay);
-		session = new EssenceRunningSession();
-		MAX_ENTRIES = config.clanChatOverlayHeight().getOption();
-		clanMessages = EssenceRunningUtils.getClanMessagesMap(MAX_ENTRIES);
-	}
+    private void shiftClickCustomization(final String target, final int index) {
 
-	@Override
-	protected void shutDown() {
-		keyManager.unregisterKeyListener(inputListener);
-		mouseManager.unregisterMouseListener(inputListener);
-		overlayManager.remove(overlay);
-		overlayManager.remove(statisticsOverlay);
-		overlayManager.remove(clanChatOverlay);
-		session = null;
-	}
+        String optionA = null;
 
-	@Subscribe
-	public void onFocusChanged(final FocusChanged event) {
-		if (!event.isFocused()) {
-			shiftModifier = false;
-		}
-	}
+        if (target.equals("pure essence")) {
+            optionA = config.pureEssence().getOption();
+        } else if (target.equals("small pouch") || target.equals("medium pouch") || target.equals("large pouch") || target.equals("giant pouch")) {
+            optionA = config.essencePouch().getOption();
+        } else if (target.equals("binding necklace")) {
+            optionA = config.bindingNecklace().getOption();
+        } else if (target.startsWith("ring of dueling")) {
+            optionA = config.ringOfDueling().getOption();
+        } else if (target.startsWith("stamina potion")) {
+            optionA = config.staminaPotion().getOption();
+        } else if (target.startsWith("energy potion")) {
+            optionA = config.staminaPotion().getOption();
+        } else if (target.equals("earth talisman")) {
+            optionA = config.earthTalisman().getOption();
+        } else if (target.startsWith("crafting cape")) {
+            optionA = config.craftingCape().getOption();
+        }
 
-	@Provides
-	EssenceRunningConfig provideConfig(final ConfigManager configManager) {
-		return configManager.getConfig(EssenceRunningConfig.class);
-	}
+        if (optionA != null) {
+            EssenceRunningUtils.swapPrevious(client, optionIndexes, optionA.toLowerCase(), target, index);
+        }
+    }
 
-	@Subscribe
-	public void onClientTick(final ClientTick clientTick) {
+    @Subscribe
+    public void onMenuEntryAdded(final MenuEntryAdded menuEntryAdded) {
+        if (config.shiftClickCustomization() && shiftModifier) {
+            // The client sorts the MenuEntries for priority after the ClientTick event so have to swap bank in MenuEntryAdded event
+            if (config.swapBankOp()) {
+                final String target = Text.removeTags(menuEntryAdded.getTarget()).toLowerCase();
+                if (!target.equals("binding necklace") || !config.excludeBindingNecklaceOp()) {
+                    EssenceRunningUtils.swapBankOp(client, menuEntryAdded);
+                }
+            }
+            if (config.swapBankWithdrawOp()) {
+                EssenceRunningUtils.swapBankWithdrawOp(client, menuEntryAdded);
+            }
+        }
+    }
 
-		// The menu is not rebuilt when it is open, so don't swap or else it will repeatedly swap entries
-		if (client.getGameState() != GameState.LOGGED_IN || client.isMenuOpen()) {
-			return;
-		}
+    @Subscribe
+    public void onMenuShouldLeftClick(final MenuShouldLeftClick menuShouldLeftClick) {
+        if (config.enableRunecrafterMode() && config.preventFireRunes()) {
+            // Option is 'Craft-rune' on the Fire Altar
+            EssenceRunningUtils.forceRightClick(client, menuShouldLeftClick, ObjectID.ALTAR_34764);
+        }
+    }
 
-		final MenuEntry[] menuEntries = client.getMenuEntries();
+    @Subscribe
+    public void onGameStateChanged(final GameStateChanged event) {
+        if (event.getGameState() == GameState.LOGIN_SCREEN) {
+            tradeSent = false;
+            session.reset();
+            runecraftXp = 0;
+            craftedFireRunes = false;
+            clanMessages.clear();
+        } else if (event.getGameState() == GameState.LOGGED_IN) {
+            amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
+            ringEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.RING);
+        }
+    }
 
-		// Build option map for quick lookup in findIndex
-		int idx = 0;
-		optionIndexes.clear();
-		for (MenuEntry entry : menuEntries) {
-			final String option = Text.removeTags(entry.getOption()).toLowerCase();
-			optionIndexes.put(option, idx++);
-		}
+    @Subscribe
+    public void onItemContainerChanged(final ItemContainerChanged event) {
+        if (event.getItemContainer() == client.getItemContainer(InventoryID.EQUIPMENT)) {
+            amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
+            ringEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.RING);
+        }
+    }
 
-		// Perform swaps
-		idx = 0;
-		for (MenuEntry entry : menuEntries) {
-			swapMenuEntry(idx++, entry);
-		}
-	}
+    @Subscribe
+    public void onChatMessage(final ChatMessage event) {
+        if (event.getMessage().equals(SENDING_TRADE_OFFER)) {
+            tradeSent = true;
+        } else if (event.getMessage().equals(ACCEPTED_TRADE)) {
+            if (config.enableRunecrafterMode() && config.sessionStatistics()) {
+                // Trade widgets are still available at this point
+                EssenceRunningUtils.computeItemsTraded(client, session);
+            }
+        } else if (event.getMessage().equals(CRAFTED_FIRE_RUNES)) {
+            craftedFireRunes = true;
+        } else if (event.getSender() != null) {
+            final String message = event.getName() + ": " + event.getMessage();
+            clanMessages.put(message.hashCode(), message);
+        }
 
-	private void swapMenuEntry(final int index, final MenuEntry menuEntry) {
-
-		if (config.shiftClickCustomization() && shiftModifier) {
-			final String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
-			final String target = Text.removeTags(menuEntry.getTarget()).toLowerCase();
-
-			if (config.swapOfferAll() && option.equals("offer")) {
-				EssenceRunningUtils.swap(client, optionIndexes, "offer-all", option, target, index, true);
-			}
-
-			if (menuEntry.getType() == MenuAction.EXAMINE_ITEM.getId()) {
-				shiftClickCustomization(target, index);
-			}
-		}
-	}
-
-	private void shiftClickCustomization(final String target, final int index) {
-
-		String optionA = null;
-
-		if (target.equals("pure essence")) {
-			optionA = config.pureEssence().getOption();
-		}
-		else if (target.equals("small pouch") || target.equals("medium pouch") || target.equals("large pouch") || target.equals("giant pouch")) {
-			optionA = config.essencePouch().getOption();
-		}
-		else if (target.equals("binding necklace")) {
-			optionA = config.bindingNecklace().getOption();
-		}
-		else if (target.startsWith("ring of dueling")) {
-			optionA = config.ringOfDueling().getOption();
-		}
-		else if (target.startsWith("stamina potion")) {
-			optionA = config.staminaPotion().getOption();
-		}
-		else if (target.startsWith("energy potion")) {
-			optionA = config.staminaPotion().getOption();
-		}
-		else if (target.equals("earth talisman")) {
-			optionA = config.earthTalisman().getOption();
-		}
-		else if (target.startsWith("crafting cape")) {
-			optionA = config.craftingCape().getOption();
-		}
-
-		if (optionA != null) {
-			EssenceRunningUtils.swapPrevious(client, optionIndexes, optionA.toLowerCase(), target, index);
-		}
-	}
-
-	@Subscribe
-	public void onMenuEntryAdded(final MenuEntryAdded menuEntryAdded) {
-		if (config.shiftClickCustomization() && shiftModifier) {
-			// The client sorts the MenuEntries for priority after the ClientTick event so have to swap bank in MenuEntryAdded event
-			if (config.swapBankOp()) {
-				final String target = Text.removeTags(menuEntryAdded.getTarget()).toLowerCase();
-				if (!target.equals("binding necklace") || !config.excludeBindingNecklaceOp()) {
-					EssenceRunningUtils.swapBankOp(client, menuEntryAdded);
-				}
-			}
-			if (config.swapBankWithdrawOp()) {
-				EssenceRunningUtils.swapBankWithdrawOp(client, menuEntryAdded);
-			}
-		}
-	}
-
-	@Subscribe
-	public void onMenuShouldLeftClick(final MenuShouldLeftClick menuShouldLeftClick) {
-		if (config.enableRunecrafterMode() && config.preventFireRunes()) {
-			// Option is 'Craft-rune' on the Fire Altar
-			EssenceRunningUtils.forceRightClick(client, menuShouldLeftClick, ObjectID.ALTAR_34764);
-		}
-	}
-
-	@Subscribe
-	public void onGameStateChanged(final GameStateChanged event) {
-		if (event.getGameState() == GameState.LOGIN_SCREEN) {
-			tradeSent = false;
-			session.reset();
-			runecraftXp = 0;
-			craftedFireRunes = false;
-			clanMessages.clear();
-		}
-		else if (event.getGameState() == GameState.LOGGED_IN) {
-			amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
-			ringEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.RING);
-		}
-	}
-
-	@Subscribe
-	public void onItemContainerChanged(final ItemContainerChanged event) {
-		if (event.getItemContainer() == client.getItemContainer(InventoryID.EQUIPMENT)) {
-			amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
-			ringEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.RING);
-		}
-	}
-
-	@Subscribe
-	public void onChatMessage(final ChatMessage event) {
-		if (event.getMessage().equals(SENDING_TRADE_OFFER)) {
-			tradeSent = true;
-		}
-		else if (event.getMessage().equals(ACCEPTED_TRADE)) {
-			if (config.enableRunecrafterMode() && config.sessionStatistics()) {
-				// Trade widgets are still available at this point
-				EssenceRunningUtils.computeItemsTraded(client, session);
-			}
-		}
-		else if (event.getMessage().equals(CRAFTED_FIRE_RUNES)) {
-			craftedFireRunes = true;
-		}
-		else if(event.getSender() != null) {
-			final String message = event.getName() + ": " + event.getMessage();
-			clanMessages.put(message.hashCode(), message);
-		}
-
-		if (config.filterTradeMessages() && event.getType() == ChatMessageType.TRADE) {
-			ChatLineBuffer buffer = client.getChatLineMap().get(ChatMessageType.TRADE.getType());
-			buffer.removeMessageNode(event.getMessageNode());
-			clientThread.invoke(() -> client.runScript(ScriptID.BUILD_CHATBOX));
-		}
-	}
+        if (config.filterTradeMessages() && event.getType() == ChatMessageType.TRADE) {
+            ChatLineBuffer buffer = client.getChatLineMap().get(ChatMessageType.TRADE.getType());
+            buffer.removeMessageNode(event.getMessageNode());
+            clientThread.invoke(() -> client.runScript(ScriptID.BUILD_CHATBOX));
+        }
+    }
 
     @Subscribe
     public void onWidgetLoaded(final WidgetLoaded event) {
@@ -298,29 +272,29 @@ public class EssenceRunningPlugin extends Plugin {
 
     @Subscribe
     public void onConfigChanged(final ConfigChanged event) {
-		if (event.getGroup().equals("essencerunning")) {
-			if (!config.sessionStatistics() && (!session.getRunners().isEmpty() || session.getTotalFireRunesCrafted() != 0)) {
-				session.reset();
-			}
-			if (MAX_ENTRIES != config.clanChatOverlayHeight().getOption()) {
-				MAX_ENTRIES = config.clanChatOverlayHeight().getOption();
-				Map<Integer, String> temp = EssenceRunningUtils.getClanMessagesMap(MAX_ENTRIES);
-				temp.putAll(clanMessages);
-				clanMessages = temp;
-			}
-		}
-	}
+        if (event.getGroup().equals("essencerunning")) {
+            if (!config.sessionStatistics() && (!session.getRunners().isEmpty() || session.getTotalFireRunesCrafted() != 0)) {
+                session.reset();
+            }
+            if (MAX_ENTRIES != config.clanChatOverlayHeight().getOption()) {
+                MAX_ENTRIES = config.clanChatOverlayHeight().getOption();
+                Map<Integer, String> temp = EssenceRunningUtils.getClanMessagesMap(MAX_ENTRIES);
+                temp.putAll(clanMessages);
+                clanMessages = temp;
+            }
+        }
+    }
 
-	@Subscribe
-	public void onStatChanged(final StatChanged statChanged) {
-		if (statChanged.getSkill() == Skill.RUNECRAFT) {
-			if (config.enableRunecrafterMode() && config.sessionStatistics()) {
-				if (craftedFireRunes) {
-					session.updateCrafterStatistic((statChanged.getXp() - runecraftXp) / FIRE_RUNE_EXPERIENCE);
-					craftedFireRunes = false;
-				}
-				runecraftXp = statChanged.getXp();
-			}
-		}
-	}
+    @Subscribe
+    public void onStatChanged(final StatChanged statChanged) {
+        if (statChanged.getSkill() == Skill.RUNECRAFT) {
+            if (config.enableRunecrafterMode() && config.sessionStatistics()) {
+                if (craftedFireRunes) {
+                    session.updateCrafterStatistic((statChanged.getXp() - runecraftXp) / FIRE_RUNE_EXPERIENCE);
+                    craftedFireRunes = false;
+                }
+                runecraftXp = statChanged.getXp();
+            }
+        }
+    }
 }

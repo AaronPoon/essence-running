@@ -34,9 +34,6 @@ public enum EssenceRunningItem {
     STAMINA_POTION_4("stamina potion(4)"),
     ;
 
-    private final String name;
-    private final int withdrawQuantity;
-
     private static final Map<String, EssenceRunningItem> map = new HashMap<>(values().length);
 
     static {
@@ -44,6 +41,9 @@ public enum EssenceRunningItem {
             map.put(item.getName(), item);
         }
     }
+
+    private final String name;
+    private final int withdrawQuantity;
 
     EssenceRunningItem(final String name) {
         this(name, 1);

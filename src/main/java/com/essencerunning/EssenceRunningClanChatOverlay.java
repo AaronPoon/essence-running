@@ -1,10 +1,5 @@
 package com.essencerunning;
 
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-
-import javax.inject.Inject;
-
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
@@ -13,6 +8,10 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
+
+import javax.inject.Inject;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 
 public class EssenceRunningClanChatOverlay extends Overlay {
 

@@ -1,12 +1,5 @@
 package com.essencerunning;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Shape;
-
-import javax.inject.Inject;
-
 import net.runelite.api.Client;
 import net.runelite.api.ItemID;
 import net.runelite.api.widgets.Widget;
@@ -17,13 +10,18 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
+import javax.inject.Inject;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Shape;
+
 public class EssenceRunningOverlay extends Overlay {
 
+    private static final String FREE_INVENTORY_SLOTS = " free inventory slots.";
     private final EssenceRunningPlugin plugin;
     private final Client client;
     private final EssenceRunningConfig config;
-
-    private static final String FREE_INVENTORY_SLOTS = " free inventory slots.";
 
     @Inject
     private EssenceRunningOverlay(final EssenceRunningPlugin plugin, final Client client, final EssenceRunningConfig config) {

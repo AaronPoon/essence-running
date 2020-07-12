@@ -1,9 +1,6 @@
 package com.essencerunning;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.ArrayListMultimap;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.InventoryID;
@@ -16,7 +13,9 @@ import net.runelite.api.events.MenuShouldLeftClick;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.util.Text;
 
-import com.google.common.collect.ArrayListMultimap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class EssenceRunningUtils {
 
@@ -41,12 +40,12 @@ public class EssenceRunningUtils {
     }
 
     public static void swap(final Client client,
-                             final ArrayListMultimap<String, Integer> optionIndexes,
-                             final String optionA,
-                             final String optionB,
-                             final String target,
-                             final int index,
-                             final boolean strict) {
+                            final ArrayListMultimap<String, Integer> optionIndexes,
+                            final String optionA,
+                            final String optionB,
+                            final String target,
+                            final int index,
+                            final boolean strict) {
 
         final MenuEntry[] menuEntries = client.getMenuEntries();
         final int thisIndex = findIndex(optionIndexes, menuEntries, index, optionB, target, strict);
@@ -78,8 +77,7 @@ public class EssenceRunningUtils {
                     return idx;
                 }
             }
-        }
-        else {
+        } else {
             // Without strict matching we have to iterate all entries up to the current limit...
             for (int i = limit; i >= 0; i--) {
                 final MenuEntry entry = entries[i];
@@ -124,7 +122,7 @@ public class EssenceRunningUtils {
 
         // Withdraw- op 1 is the current withdraw amount 1/5/10/x
         if (item != null && menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 1
-                && menuEntryAdded.getOption().startsWith("Withdraw-")) {
+            && menuEntryAdded.getOption().startsWith("Withdraw-")) {
 
             final MenuEntry[] menuEntries = client.getMenuEntries();
             final String withdrawQuantity = "Withdraw-" + item.getWithdrawQuantity();
@@ -148,7 +146,7 @@ public class EssenceRunningUtils {
 
         // Deposit- op 2 is the current deposit amount 1/5/10/x
         if (menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 2
-                && menuEntryAdded.getOption().startsWith("Deposit-")) {
+            && menuEntryAdded.getOption().startsWith("Deposit-")) {
 
             final MenuEntry[] menuEntries = client.getMenuEntries();
 
@@ -158,7 +156,7 @@ public class EssenceRunningUtils {
 
                 // The extra options are always option 9
                 if (entry.getType() == MenuAction.CC_OP_LOW_PRIORITY.getId() && entry.getIdentifier() == 9
-                        && !entry.getOption().equals("Empty")) { // exclude Runecraft pouch's "Empty" option
+                    && !entry.getOption().equals("Empty")) { // exclude Runecraft pouch's "Empty" option
 
                     // we must also raise the priority of the op so it doesn't get sorted later
                     entry.setType(MenuAction.CC_OP.getId());
@@ -177,11 +175,9 @@ public class EssenceRunningUtils {
         final ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
         if (equipment != null) {
             final Item[] item = equipment.getItems();
-            if (item.length > slot.getSlotIdx()
-                    && item[slot.getSlotIdx()] != null
-                    && item[slot.getSlotIdx()].getId() > -1) {
-                return true;
-            }
+            return item.length > slot.getSlotIdx()
+                && item[slot.getSlotIdx()] != null
+                && item[slot.getSlotIdx()].getId() > -1;
         }
         return false;
     }
@@ -196,8 +192,7 @@ public class EssenceRunningUtils {
         for (Widget widget : partnerTrades.getChildren()) {
             if (widget.getText().equals("Pure essence")) {
                 pureEssenceTraded++;
-            }
-            else if(widget.getText().equals("Binding necklace")) {
+            } else if (widget.getText().equals("Binding necklace")) {
                 bindingNecklaceTraded++;
             }
         }
