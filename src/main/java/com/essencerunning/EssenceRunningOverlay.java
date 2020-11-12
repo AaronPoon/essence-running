@@ -108,6 +108,6 @@ public class EssenceRunningOverlay extends Overlay {
     private boolean matchFreeInventorySlots() {
         // Widget that contains the trading partner's number of free inventory slots
         final Widget freeSlots = client.getWidget(WidgetID.PLAYER_TRADE_SCREEN_GROUP_ID, 9);
-        return freeSlots != null && freeSlots.getText().endsWith(config.highlightTradeBindingNecklace().getOption() + FREE_INVENTORY_SLOTS);
+        return freeSlots != null && freeSlots.getText().endsWith(config.highlightTradeBindingNecklace().getOption().split(" ")[0] + FREE_INVENTORY_SLOTS);
     }
 }
