@@ -107,7 +107,8 @@ public class EssenceRunningPlugin extends Plugin {
     private boolean craftedFireRunes = false;
 
     private EssenceRunningTickCounter counter;
-    boolean isFirstMessage = false;
+    private boolean isFirstMessage = false;
+    private boolean isCounting = false;
 
     @Override
     protected void startUp() {
@@ -293,7 +294,7 @@ public class EssenceRunningPlugin extends Plugin {
                 if (counter == null)
                     createTickCounter(MAGIC_IMBUE_WARNING_DURATION);
                 else
-                    counter.setCount(MAGIC_IMBUE_WARNING_DURATION);
+                    isCounting = true;
                 isFirstMessage = false;
             }
         }
@@ -317,7 +318,13 @@ public class EssenceRunningPlugin extends Plugin {
             {
                 counter.setTextColor(Color.RED);
             }
-            counter.setCount(counter.getCount() - 1);
+            if (isCounting) {
+                if (counter.getCount() == MAGIC_IMBUE_WARNING_DURATION + 1)
+                {
+                    isCounting = false;
+                }
+                counter.setCount(counter.getCount() - 1);
+            }
         }
         else
         {
@@ -372,6 +379,7 @@ public class EssenceRunningPlugin extends Plugin {
             spriteManager.getSpriteAsync(SpriteID.SPELL_MAGIC_IMBUE, 0, counter);
             counter.setTooltip("Magic imbue");
             infoBoxManager.addInfoBox(counter);
+            isCounting = true;
         }
         else
         {
@@ -389,5 +397,6 @@ public class EssenceRunningPlugin extends Plugin {
 
         infoBoxManager.removeInfoBox(counter);
         counter = null;
+        isCounting = false;
     }
 }
