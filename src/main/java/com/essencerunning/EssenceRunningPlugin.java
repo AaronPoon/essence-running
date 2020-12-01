@@ -259,61 +259,28 @@ public class EssenceRunningPlugin extends Plugin {
             buffer.removeMessageNode(event.getMessageNode());
             clientThread.invoke(() -> client.runScript(ScriptID.BUILD_CHATBOX));
         }
+
+        if (config.enableRunecrafterMode() && config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_MESSAGE))
         {
-            if (event.getType() != ChatMessageType.SPAM && event.getType() != ChatMessageType.GAMEMESSAGE)
-            {
-                return;
-            }
+            createTickCounter(MAGIC_IMBUE_DURATION);
+            isFirstMessage = true;
+        }
 
-            if (config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_MESSAGE))
+        if (config.enableRunecrafterMode() && config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_WARNING))
+        {
+            if (isFirstMessage)
             {
-                createTickCounter(MAGIC_IMBUE_DURATION);
-                isFirstMessage = true;
+                if (counter == null)
+                    createTickCounter(MAGIC_IMBUE_WARNING_DURATION);
+                else
+                    counter.setCount(MAGIC_IMBUE_WARNING_DURATION);
+                isFirstMessage = false;
             }
+        }
 
-            if (config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_WARNING))
-            {
-                if (isFirstMessage)
-                {
-                    if (counter == null)
-                        createTickCounter(MAGIC_IMBUE_WARNING_DURATION);
-                    else
-                        counter.setCount(MAGIC_IMBUE_WARNING_DURATION);
-                    isFirstMessage = false;
-                }
-            }
-
-            if (event.getMessage().equals(MAGIC_IMBUE_EXPIRED_MESSAGE))
-            {
-                removeTickCounter();
-            }
-            if (event.getType() != ChatMessageType.SPAM && event.getType() != ChatMessageType.GAMEMESSAGE)
-            {
-                return;
-            }
-
-            if (config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_MESSAGE))
-            {
-                createTickCounter(MAGIC_IMBUE_DURATION);
-                isFirstMessage = true;
-            }
-
-            if (config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_WARNING))
-            {
-                if (isFirstMessage)
-                {
-                    if (counter == null)
-                        createTickCounter(MAGIC_IMBUE_WARNING_DURATION);
-                    else
-                        counter.setCount(MAGIC_IMBUE_WARNING_DURATION);
-                    isFirstMessage = false;
-                }
-            }
-
-            if (event.getMessage().equals(MAGIC_IMBUE_EXPIRED_MESSAGE))
-            {
-                removeTickCounter();
-            }
+        if (event.getMessage().equals(MAGIC_IMBUE_EXPIRED_MESSAGE))
+        {
+            removeTickCounter();
         }
     }
 
@@ -357,7 +324,7 @@ public class EssenceRunningPlugin extends Plugin {
                 temp.putAll(clanMessages);
                 clanMessages = temp;
             }
-            if (!config.showAccurateMagicImbue())
+            if (!config.showAccurateMagicImbue() || !config.enableRunecrafterMode())
             {
                 removeTickCounter();
             }
