@@ -268,4 +268,14 @@ public interface EssenceRunningConfig extends Config {
     default EssenceRunningItemDropdown.CraftingCape craftingCape() {
         return EssenceRunningItemDropdown.CraftingCape.TELEPORT;
     }
+    @ConfigItem(
+            position = 12,
+            keyName = "showAccurateMagicImbue",
+            name = "Accurate Magic imbue timer in ticks",
+            description = "Configures whether magic imbue timer is displayed in ticks"
+    )
+    default boolean showAccurateMagicImbue()
+    {
+        return true;
+    }
 }
