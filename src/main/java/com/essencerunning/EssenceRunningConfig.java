@@ -79,6 +79,18 @@ public interface EssenceRunningConfig extends Config {
         return EssenceRunningItemDropdown.HighlightEquipBindingNecklace.EQUIP;
     }
 
+    @ConfigItem(
+            position = 4,
+            keyName = "showAccurateMagicImbue",
+            name = "Accurate Magic imbue timer in ticks",
+            description = "Configures whether magic imbue timer is displayed in ticks",
+            section = runecrafterSettings
+    )
+    default boolean showAccurateMagicImbue()
+    {
+        return true;
+    }
+
     @ConfigSection(
         name = "Runner Settings",
         description = "Section that houses all the relevant settings for Runners",

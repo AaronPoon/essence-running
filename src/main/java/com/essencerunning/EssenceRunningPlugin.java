@@ -16,10 +16,12 @@ import net.runelite.api.MenuEntry;
 import net.runelite.api.ObjectID;
 import net.runelite.api.ScriptID;
 import net.runelite.api.Skill;
+import net.runelite.api.SpriteID;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuShouldLeftClick;
@@ -30,14 +32,17 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
+import java.awt.Color;
 import java.util.Map;
 
 @Slf4j
@@ -50,6 +55,11 @@ public class EssenceRunningPlugin extends Plugin {
     private static final String ACCEPTED_TRADE = "Accepted trade.";
     private static final String CRAFTED_FIRE_RUNES = "You bind the temple's power into fire runes.";
     private static final int FIRE_RUNE_EXPERIENCE = 7;
+    private static final String MAGIC_IMBUE_EXPIRED_MESSAGE = "Your Magic Imbue charge has ended.";
+    private static final String MAGIC_IMBUE_MESSAGE = "You are charged to combine runes!";
+    private static final String MAGIC_IMBUE_WARNING = "Your Magic Imbue spell charge is running out...";
+    private static final int MAGIC_IMBUE_DURATION = 20;
+    private static final int MAGIC_IMBUE_WARNING_DURATION = 10;
     private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
     @Inject
     private Client client;
@@ -71,6 +81,10 @@ public class EssenceRunningPlugin extends Plugin {
     private EssenceRunningStatisticsOverlay statisticsOverlay;
     @Inject
     private EssenceRunningClanChatOverlay clanChatOverlay;
+    @Inject
+    private SpriteManager spriteManager;
+    @Inject
+    private InfoBoxManager infoBoxManager;
     @Setter
     private boolean shiftModifier = false;
     @Getter
@@ -92,6 +106,10 @@ public class EssenceRunningPlugin extends Plugin {
     private int runecraftXp = 0;
     private boolean craftedFireRunes = false;
 
+    private EssenceRunningTickCounter counter;
+    private boolean isFirstMessage = false;
+    private boolean isCounting = false;
+
     @Override
     protected void startUp() {
         keyManager.registerKeyListener(inputListener);
@@ -108,6 +126,7 @@ public class EssenceRunningPlugin extends Plugin {
     protected void shutDown() {
         keyManager.unregisterKeyListener(inputListener);
         mouseManager.unregisterMouseListener(inputListener);
+        infoBoxManager.removeIf(t -> t instanceof EssenceRunningTickCounter);
         overlayManager.remove(overlay);
         overlayManager.remove(statisticsOverlay);
         overlayManager.remove(clanChatOverlay);
@@ -261,6 +280,56 @@ public class EssenceRunningPlugin extends Plugin {
             buffer.removeMessageNode(event.getMessageNode());
             clientThread.invoke(() -> client.runScript(ScriptID.BUILD_CHATBOX));
         }
+
+        if (config.enableRunecrafterMode() && config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_MESSAGE))
+        {
+            createTickCounter(MAGIC_IMBUE_DURATION);
+            isFirstMessage = true;
+        }
+
+        if (config.enableRunecrafterMode() && config.showAccurateMagicImbue() && event.getMessage().equals(MAGIC_IMBUE_WARNING))
+        {
+            if (isFirstMessage)
+            {
+                if (counter == null)
+                    createTickCounter(MAGIC_IMBUE_WARNING_DURATION);
+                else
+                    isCounting = true;
+                isFirstMessage = false;
+            }
+        }
+
+        if (event.getMessage().equals(MAGIC_IMBUE_EXPIRED_MESSAGE))
+        {
+            removeTickCounter();
+        }
+    }
+
+    @Subscribe
+    public void onGameTick(GameTick event)
+    {
+        if (counter == null)
+        {
+            return;
+        }
+
+        if (counter.getCount() > -1) {
+            if (counter.getCount() == 0)
+            {
+                counter.setTextColor(Color.RED);
+            }
+            if (isCounting) {
+                if (counter.getCount() == MAGIC_IMBUE_WARNING_DURATION + 1)
+                {
+                    isCounting = false;
+                }
+                counter.setCount(counter.getCount() - 1);
+            }
+        }
+        else
+        {
+            removeTickCounter();
+        }
     }
 
     @Subscribe
@@ -282,6 +351,10 @@ public class EssenceRunningPlugin extends Plugin {
                 temp.putAll(clanMessages);
                 clanMessages = temp;
             }
+            if (!config.showAccurateMagicImbue() || !config.enableRunecrafterMode())
+            {
+                removeTickCounter();
+            }
         }
     }
 
@@ -296,5 +369,34 @@ public class EssenceRunningPlugin extends Plugin {
                 runecraftXp = statChanged.getXp();
             }
         }
+    }
+
+    private void createTickCounter(int duration)
+    {
+        if (counter == null)
+        {
+            counter = new EssenceRunningTickCounter(null, this, duration);
+            spriteManager.getSpriteAsync(SpriteID.SPELL_MAGIC_IMBUE, 0, counter);
+            counter.setTooltip("Magic imbue");
+            infoBoxManager.addInfoBox(counter);
+            isCounting = true;
+        }
+        else
+        {
+            counter.setCount(duration);
+            counter.setTextColor(Color.WHITE);
+        }
+    }
+
+    private void removeTickCounter()
+    {
+        if (counter == null)
+        {
+            return;
+        }
+
+        infoBoxManager.removeInfoBox(counter);
+        counter = null;
+        isCounting = false;
     }
 }
