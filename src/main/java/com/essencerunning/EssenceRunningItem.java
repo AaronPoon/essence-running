@@ -19,6 +19,11 @@ public enum EssenceRunningItem {
     ENERGY_POTION_3("energy potion(3)"),
     ENERGY_POTION_4("energy potion(4)"),
 
+    SUPER_ENERGY_1("super energy(1)"),
+    SUPER_ENERGY_2("super energy(2)"),
+    SUPER_ENERGY_3("super energy(3)"),
+    SUPER_ENERGY_4("super energy(4)"),
+
     RING_OF_DUELING_1("ring of dueling(1)"),
     RING_OF_DUELING_2("ring of dueling(2)"),
     RING_OF_DUELING_3("ring of dueling(3)"),
