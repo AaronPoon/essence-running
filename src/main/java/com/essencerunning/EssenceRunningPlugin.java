@@ -180,7 +180,7 @@ public class EssenceRunningPlugin extends Plugin {
                 EssenceRunningUtils.swap(client, optionIndexes, "offer-all", option, target, index, true);
             }
 
-            if (menuEntry.getType() == MenuAction.EXAMINE_ITEM.getId()) {
+            if (menuEntry.getType() == MenuAction.EXAMINE_ITEM) {
                 shiftClickCustomization(target, index);
             }
         }

@@ -155,11 +155,11 @@ public class EssenceRunningUtils {
                 final MenuEntry entry = menuEntries[i];
 
                 // The extra options are always option 9
-                if (entry.getType() == MenuAction.CC_OP_LOW_PRIORITY.getId() && entry.getIdentifier() == 9
+                if (entry.getType() == MenuAction.CC_OP_LOW_PRIORITY && entry.getIdentifier() == 9
                     && !entry.getOption().equals("Empty")) { // exclude Runecraft pouch's "Empty" option
 
                     // we must also raise the priority of the op so it doesn't get sorted later
-                    entry.setType(MenuAction.CC_OP.getId());
+                    entry.setType(MenuAction.CC_OP);
 
                     menuEntries[i] = menuEntries[menuEntries.length - 1];
                     menuEntries[menuEntries.length - 1] = entry;
@@ -202,7 +202,7 @@ public class EssenceRunningUtils {
     public static void forceRightClick(final Client client, final MenuShouldLeftClick menuShouldLeftClick, final int objectId) {
         final MenuEntry[] menuEntries = client.getMenuEntries();
         final MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
-        if (menuEntry.getIdentifier() == objectId && menuEntry.getType() == MenuAction.GAME_OBJECT_FIRST_OPTION.getId()) {
+        if (menuEntry.getIdentifier() == objectId && menuEntry.getType() == MenuAction.GAME_OBJECT_FIRST_OPTION) {
             menuShouldLeftClick.setForceRightClick(true);
         }
     }
