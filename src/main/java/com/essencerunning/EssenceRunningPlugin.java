@@ -17,16 +17,7 @@ import net.runelite.api.ObjectID;
 import net.runelite.api.ScriptID;
 import net.runelite.api.Skill;
 import net.runelite.api.SpriteID;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.ClientTick;
-import net.runelite.api.events.FocusChanged;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.MenuEntryAdded;
-import net.runelite.api.events.MenuShouldLeftClick;
-import net.runelite.api.events.StatChanged;
-import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.events.*;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -230,10 +221,13 @@ public class EssenceRunningPlugin extends Plugin {
     }
 
     @Subscribe
-    public void onMenuShouldLeftClick(final MenuShouldLeftClick menuShouldLeftClick) {
+    public void onMenuOptionClicked(MenuOptionClicked menuOptionClicked) {
         if (config.enableRunecrafterMode() && config.preventFireRunes()) {
-            // Option is 'Craft-rune' on the Fire Altar
-            EssenceRunningUtils.forceRightClick(client, menuShouldLeftClick, ObjectID.ALTAR_34764);
+            if (menuOptionClicked.getId() == ObjectID.ALTAR_34764 // Fire Altar
+                    && menuOptionClicked.getMenuAction() == MenuAction.GAME_OBJECT_FIRST_OPTION) { // Craft-rune
+                menuOptionClicked.consume();
+                client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Essence Running has prevented you from accidentally creating Fire Runes!", "");
+            }
         }
     }
 

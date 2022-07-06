@@ -199,14 +199,6 @@ public class EssenceRunningUtils {
         session.updateRunnerStatistic(tradingPartnerRsn, pureEssenceTraded, bindingNecklaceTraded);
     }
 
-    public static void forceRightClick(final Client client, final MenuShouldLeftClick menuShouldLeftClick, final int objectId) {
-        final MenuEntry[] menuEntries = client.getMenuEntries();
-        final MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
-        if (menuEntry.getIdentifier() == objectId && menuEntry.getType() == MenuAction.GAME_OBJECT_FIRST_OPTION) {
-            menuShouldLeftClick.setForceRightClick(true);
-        }
-    }
-
     public static Map<Integer, String> getClanMessagesMap(final int size) {
         return new LinkedHashMap<Integer, String>(size) {
             @Override

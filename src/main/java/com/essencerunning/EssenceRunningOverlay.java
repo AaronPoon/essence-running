@@ -59,17 +59,9 @@ public class EssenceRunningOverlay extends Overlay {
         if (config.enableRunecrafterMode()) {
             if (config.highlightEquipBindingNecklace() == EssenceRunningItemDropdown.HighlightEquipBindingNecklace.EQUIP) {
                 if (!plugin.isAmuletEquipped()) {
-                    final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
-                    if (!inventory.isHidden()) {
-                        for (final WidgetItem item : inventory.getWidgetItems()) {
-                            if (!item.getWidget().isHidden() && item.getId() == ItemID.BINDING_NECKLACE) {
-                                drawShape(graphics, item.getCanvasBounds(), Color.RED);
-                            }
-                        }
-                    } else {
-                        drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER), ItemID.BINDING_NECKLACE);
-                        drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER), ItemID.BINDING_NECKLACE);
-                    }
+                    drawWidgetChildren(graphics, client.getWidget(WidgetInfo.INVENTORY), ItemID.BINDING_NECKLACE);
+                    drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER), ItemID.BINDING_NECKLACE);
+                    drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER), ItemID.BINDING_NECKLACE);
                 }
             }
         }
