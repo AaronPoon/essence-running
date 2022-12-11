@@ -5,27 +5,16 @@ import com.google.inject.Provides;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatLineBuffer;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.EquipmentInventorySlot;
-import net.runelite.api.GameState;
-import net.runelite.api.InventoryID;
-import net.runelite.api.MenuAction;
-import net.runelite.api.MenuEntry;
-import net.runelite.api.ObjectID;
-import net.runelite.api.ScriptID;
-import net.runelite.api.Skill;
-import net.runelite.api.SpriteID;
+import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.SpriteManager;
-import net.runelite.client.input.KeyManager;
-import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -45,6 +34,7 @@ public class EssenceRunningPlugin extends Plugin {
     private static final String SENDING_TRADE_OFFER = "Sending trade offer...";
     private static final String ACCEPTED_TRADE = "Accepted trade.";
     private static final String CRAFTED_FIRE_RUNES = "You bind the temple's power into fire runes.";
+    private static final String WAITING_OTHER_PLAYER = "Waiting for other player...";
     private static final int FIRE_RUNE_EXPERIENCE = 7;
     private static final String MAGIC_IMBUE_EXPIRED_MESSAGE = "Your Magic Imbue charge has ended.";
     private static final String MAGIC_IMBUE_MESSAGE = "You are charged to combine runes!";
@@ -59,13 +49,7 @@ public class EssenceRunningPlugin extends Plugin {
     @Inject
     private EssenceRunningConfig config;
     @Inject
-    private KeyManager keyManager;
-    @Inject
-    private MouseManager mouseManager;
-    @Inject
     private OverlayManager overlayManager;
-    @Inject
-    private ShiftClickInputListener inputListener;
     @Inject
     private EssenceRunningOverlay overlay;
     @Inject
@@ -103,8 +87,6 @@ public class EssenceRunningPlugin extends Plugin {
 
     @Override
     protected void startUp() {
-        keyManager.registerKeyListener(inputListener);
-        mouseManager.registerMouseListener(inputListener);
         overlayManager.add(overlay);
         overlayManager.add(statisticsOverlay);
         overlayManager.add(clanChatOverlay);
@@ -115,20 +97,11 @@ public class EssenceRunningPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
-        keyManager.unregisterKeyListener(inputListener);
-        mouseManager.unregisterMouseListener(inputListener);
         infoBoxManager.removeIf(t -> t instanceof EssenceRunningTickCounter);
         overlayManager.remove(overlay);
         overlayManager.remove(statisticsOverlay);
         overlayManager.remove(clanChatOverlay);
         session = null;
-    }
-
-    @Subscribe
-    public void onFocusChanged(final FocusChanged event) {
-        if (!event.isFocused()) {
-            shiftModifier = false;
-        }
     }
 
     @Provides
@@ -154,16 +127,12 @@ public class EssenceRunningPlugin extends Plugin {
             optionIndexes.put(option, idx++);
         }
 
-        // Perform swaps
-        idx = 0;
-        for (MenuEntry entry : menuEntries) {
-            swapMenuEntry(idx++, entry);
-        }
+        swapMenuEntry(menuEntries.length - 1, menuEntries[menuEntries.length - 1]);
     }
 
     private void swapMenuEntry(final int index, final MenuEntry menuEntry) {
 
-        if (config.shiftClickCustomization() && shiftModifier) {
+        if (config.leftClickCustomization()) {
             final String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
             final String target = Text.removeTags(menuEntry.getTarget()).toLowerCase();
 
@@ -171,51 +140,49 @@ public class EssenceRunningPlugin extends Plugin {
                 EssenceRunningUtils.swap(client, optionIndexes, "offer-all", option, target, index, true);
             }
 
-            if (menuEntry.getType() == MenuAction.EXAMINE_ITEM) {
-                shiftClickCustomization(target, index);
-            }
+            leftClickCustomization(target, option, index);
         }
     }
 
-    private void shiftClickCustomization(final String target, final int index) {
+    private void leftClickCustomization(final String target, final String option, final int index) {
 
         String optionA = null;
 
-        if (target.equals("pure essence")) {
-            optionA = config.pureEssence().getOption();
-        } else if (target.equals("small pouch") || target.equals("medium pouch") || target.equals("large pouch") || target.equals("giant pouch")) {
-            optionA = config.essencePouch().getOption();
-        } else if (target.equals("binding necklace")) {
-            optionA = config.bindingNecklace().getOption();
-        } else if (target.startsWith("ring of dueling")) {
-            optionA = config.ringOfDueling().getOption();
-        } else if (target.startsWith("stamina potion")) {
-            optionA = config.staminaPotion().getOption();
-        } else if (target.startsWith("energy potion")) {
-            optionA = config.staminaPotion().getOption();
-        } else if (target.equals("earth talisman")) {
-            optionA = config.earthTalisman().getOption();
-        } else if (target.startsWith("crafting cape")) {
-            optionA = config.craftingCape().getOption();
+        if (client.getWidget(WidgetInfo.BANK_CONTAINER) != null) {
+            final EssenceRunningItem item = EssenceRunningItem.of(target);
+            if (config.swapBankWithdrawOp() && item != null) {
+                optionA = "Withdraw-" + item.getWithdrawQuantity();
+            }
+        } else {
+            if (target.equals("small pouch") || target.equals("medium pouch") || target.equals("large pouch") || target.equals("giant pouch") || target.equals("colossal pouch")) {
+                optionA = config.essencePouch().getOption();
+            } else if (target.equals("binding necklace")) {
+                optionA = config.bindingNecklace().getOption();
+            } else if (target.startsWith("ring of the elements")) {
+                optionA = "Fire Altar";
+            } else if (target.startsWith("ring of dueling")) {
+                optionA = "PvP Arena";
+            } else if (target.startsWith("crafting cape")) {
+                optionA = config.craftingCape().getOption();
+            } else if (target.equals("amulet of eternal glory")) {
+                optionA = "Edgeville";
+            }
         }
 
         if (optionA != null) {
-            EssenceRunningUtils.swapPrevious(client, optionIndexes, optionA.toLowerCase(), target, index);
+            EssenceRunningUtils.swap(client, optionIndexes, optionA.toLowerCase(), option, target, index, true);
         }
     }
 
     @Subscribe
     public void onMenuEntryAdded(final MenuEntryAdded menuEntryAdded) {
-        if (config.shiftClickCustomization() && shiftModifier) {
+        if (config.leftClickCustomization()) {
             // The client sorts the MenuEntries for priority after the ClientTick event so have to swap bank in MenuEntryAdded event
             if (config.swapBankOp()) {
                 final String target = Text.removeTags(menuEntryAdded.getTarget()).toLowerCase();
-                if (!target.equals("binding necklace") || !config.excludeBindingNecklaceOp()) {
+                if (!target.startsWith("binding necklace") || !config.excludeBindingNecklaceOp()) {
                     EssenceRunningUtils.swapBankOp(client, menuEntryAdded);
                 }
-            }
-            if (config.swapBankWithdrawOp()) {
-                EssenceRunningUtils.swapBankWithdrawOp(client, menuEntryAdded);
             }
         }
     }
@@ -227,6 +194,24 @@ public class EssenceRunningPlugin extends Plugin {
                     && menuOptionClicked.getMenuAction() == MenuAction.GAME_OBJECT_FIRST_OPTION) { // Craft-rune
                 menuOptionClicked.consume();
                 client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Essence Running has prevented you from accidentally creating Fire Runes!", "");
+            }
+        }
+        if (config.enableRunnerMode() && config.preventTradeCancel()) {
+            final String option = Text.removeTags(menuOptionClicked.getMenuOption()).toLowerCase();
+            final String target = Text.removeTags(menuOptionClicked.getMenuTarget()).toLowerCase();
+            final Widget textField = client.getWidget(334, 4);
+            if (textField != null && textField.getText().equals(WAITING_OTHER_PLAYER) &&
+                    ((target.startsWith("crafting cape") && option.equals("teleport"))
+                            || (target.startsWith("ring of dueling") && option.equals("pvp arena"))
+                            || (target.equals("ring of the elements") && (option.equals("last destination") || option.equals("fire altar")))
+                            || (target.equals("amulet of eternal glory") && option.equals("edgeville"))
+                            || (target.equals("small pouch") && option.equals("empty"))
+                            || (target.equals("medium pouch") && option.equals("empty"))
+                            || (target.equals("large pouch") && option.equals("empty"))
+                            || (target.equals("giant pouch") && option.equals("empty"))
+                            || (target.equals("colossal pouch") && option.equals("empty")))) {
+                client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Essence Running has prevented you from accidentally cancelling the Trade!", "");
+                menuOptionClicked.consume();
             }
         }
     }

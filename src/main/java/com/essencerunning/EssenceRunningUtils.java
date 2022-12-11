@@ -21,24 +21,6 @@ public class EssenceRunningUtils {
 
     private static final String TRADING_WITH = "Trading with:<br>";
 
-    public static void swapPrevious(final Client client,
-                                    final ArrayListMultimap<String, Integer> optionIndexes,
-                                    final String optionA, // the desired option
-                                    final String target,
-                                    final int index) { // the index of examine
-
-        if (index > 0) {
-            // examine is always the last option for an item and the one before it is the default displayed option
-            final MenuEntry previousEntry = client.getMenuEntries()[index - 1];
-            final String previousOption = Text.removeTags(previousEntry.getOption()).toLowerCase();
-            final String previousTarget = Text.removeTags(previousEntry.getTarget()).toLowerCase();
-
-            if (target.equals(previousTarget) && !optionA.equals(previousOption)) {
-                swap(client, optionIndexes, optionA, previousOption, target, index - 1, true);
-            }
-        }
-    }
-
     public static void swap(final Client client,
                             final ArrayListMultimap<String, Integer> optionIndexes,
                             final String optionA,
@@ -101,6 +83,7 @@ public class EssenceRunningUtils {
                              final int index2) {
 
         final MenuEntry entry = entries[index1];
+        entry.setType((entries[index2].getType()));
         entries[index1] = entries[index2];
         entries[index2] = entry;
 
@@ -112,33 +95,6 @@ public class EssenceRunningUtils {
         for (MenuEntry menuEntry : entries) {
             final String option = Text.removeTags(menuEntry.getOption()).toLowerCase();
             optionIndexes.put(option, idx++);
-        }
-    }
-
-    public static void swapBankWithdrawOp(final Client client, final MenuEntryAdded menuEntryAdded) {
-
-        final String target = Text.removeTags(menuEntryAdded.getTarget()).toLowerCase();
-        final EssenceRunningItem item = EssenceRunningItem.of(target);
-
-        // Withdraw- op 1 is the current withdraw amount 1/5/10/x
-        if (item != null && menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 1
-            && menuEntryAdded.getOption().startsWith("Withdraw-")) {
-
-            final MenuEntry[] menuEntries = client.getMenuEntries();
-            final String withdrawQuantity = "Withdraw-" + item.getWithdrawQuantity();
-
-            // Find the custom withdraw quantity option
-            for (int i = menuEntries.length - 1; i >= 0; --i) {
-                final MenuEntry entry = menuEntries[i];
-
-                if (entry.getOption().equals(withdrawQuantity)) {
-                    menuEntries[i] = menuEntries[menuEntries.length - 1];
-                    menuEntries[menuEntries.length - 1] = entry;
-
-                    client.setMenuEntries(menuEntries);
-                    break;
-                }
-            }
         }
     }
 

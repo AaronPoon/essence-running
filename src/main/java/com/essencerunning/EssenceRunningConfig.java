@@ -142,21 +142,32 @@ public interface EssenceRunningConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            position = 4,
+            keyName = "preventTradeCancel",
+            name = "Prevent Trade Cancel",
+            description = "Prevents you from accidentally Teleporting/Emptying when awaiting Trader to Accept on Second Trade Screen",
+            section = runnerSettings
+    )
+    default boolean preventTradeCancel() {
+        return true;
+    }
+
     @ConfigSection(
-        name = "Runner Shift-Click Settings",
-        description = "Section that houses all the relevant settings for modifying shift-click behavior",
+        name = "Runner Left-Click Settings",
+        description = "Section that houses all the relevant settings for modifying left-click behavior",
         position = 300
     )
-    String shiftClickSection = "shiftClickSection";
+    String leftClickSection = "leftClickSection";
 
     @ConfigItem(
         position = 0,
-        keyName = "shiftClickCustomization",
-        name = "Enable Customizable Shift-Click",
-        description = "Allows customization of shift-clicks on items below that persist even when RuneLite loses focus",
-        section = shiftClickSection
+        keyName = "leftClickCustomization",
+        name = "Enable Customizable Left-Click",
+        description = "Allows customization of left-clicks on items below that persist",
+        section = leftClickSection
     )
-    default boolean shiftClickCustomization() {
+    default boolean leftClickCustomization() {
         return false;
     }
 
@@ -164,8 +175,8 @@ public interface EssenceRunningConfig extends Config {
         position = 1,
         keyName = "swapOfferAll",
         name = "Swap Offer-All",
-        description = "Swaps the 'Offer' option to 'Offer-All' when holding shift",
-        section = shiftClickSection
+        description = "Swaps the 'Offer' option to 'Offer-All'",
+        section = leftClickSection
     )
     default boolean swapOfferAll() {
         return true;
@@ -175,8 +186,8 @@ public interface EssenceRunningConfig extends Config {
         position = 2,
         keyName = "swapBankOp",
         name = "Swap Bank Op",
-        description = "Swaps the extra menu option in banks (Wield, Eat, etc.) when holding shift",
-        section = shiftClickSection
+        description = "Swaps the extra menu option in banks (Wield, Eat, etc.)",
+        section = leftClickSection
     )
     default boolean swapBankOp() {
         return true;
@@ -187,7 +198,7 @@ public interface EssenceRunningConfig extends Config {
         keyName = "excludeBindingNecklaceOp",
         name = "Exclude Binding necklace Op",
         description = "Exclude swapping Binding necklace to 'Wear', should Disable this while soloing",
-        section = shiftClickSection
+        section = leftClickSection
     )
     default boolean excludeBindingNecklaceOp() {
         return true;
@@ -197,30 +208,19 @@ public interface EssenceRunningConfig extends Config {
         position = 4,
         keyName = "swapBankWithdrawOp",
         name = "Swap Bank Withdraw Op",
-        description = "Swaps the Withdraw quantity of certain items (Ring of dueling, Binding necklace, etc.) when holding shift",
-        section = shiftClickSection
+        description = "Swaps the Withdraw quantity of certain items (Ring of dueling, Binding necklace, etc.)",
+        section = leftClickSection
     )
     default boolean swapBankWithdrawOp() {
         return true;
     }
 
     @ConfigItem(
-        position = 5,
-        keyName = "pureEssence",
-        name = "Pure essence",
-        description = "Customize shift-click of 'Pure essence' in inventory",
-        section = shiftClickSection
-    )
-    default EssenceRunningItemDropdown.PureEssence pureEssence() {
-        return EssenceRunningItemDropdown.PureEssence.USE;
-    }
-
-    @ConfigItem(
         position = 6,
         keyName = "essencePouch",
         name = "Essence pouch",
-        description = "Customize shift-click of 'Essence pouch' in inventory",
-        section = shiftClickSection
+        description = "Customize left-click of 'Essence pouch' in inventory",
+        section = leftClickSection
     )
     default EssenceRunningItemDropdown.EssencePouch essencePouch() {
         return EssenceRunningItemDropdown.EssencePouch.EMPTY;
@@ -230,52 +230,19 @@ public interface EssenceRunningConfig extends Config {
         position = 7,
         keyName = "bindingNecklace",
         name = "Binding necklace",
-        description = "Customize shift-click of 'Binding necklace' in inventory",
-        section = shiftClickSection
+        description = "Customize left-click of 'Binding necklace' in inventory",
+        section = leftClickSection
     )
     default EssenceRunningItemDropdown.BindingNecklace bindingNecklace() {
         return EssenceRunningItemDropdown.BindingNecklace.USE;
     }
 
     @ConfigItem(
-        position = 8,
-        keyName = "ringOfDueling",
-        name = "Ring of dueling",
-        description = "Customize shift-click of 'Ring of dueling' in inventory",
-        section = shiftClickSection
-    )
-    default EssenceRunningItemDropdown.RingOfDueling ringOfDueling() {
-        return EssenceRunningItemDropdown.RingOfDueling.WEAR;
-    }
-
-    @ConfigItem(
-        position = 9,
-        keyName = "staminaPotion",
-        name = "Stamina potion",
-        description = "Customize shift-click of 'Stamina potion' and 'Energy potion' in inventory",
-        section = shiftClickSection
-    )
-    default EssenceRunningItemDropdown.StaminaPotion staminaPotion() {
-        return EssenceRunningItemDropdown.StaminaPotion.DRINK;
-    }
-
-    @ConfigItem(
-        position = 10,
-        keyName = "earthTalisman",
-        name = "Earth talisman",
-        description = "Customize shift-click of 'Earth talisman' in inventory",
-        section = shiftClickSection
-    )
-    default EssenceRunningItemDropdown.EarthTalisman earthTalisman() {
-        return EssenceRunningItemDropdown.EarthTalisman.USE;
-    }
-
-    @ConfigItem(
         position = 11,
         keyName = "craftingCape",
         name = "Crafting cape",
-        description = "Customize shift-click of 'Crafting cape' in inventory",
-        section = shiftClickSection
+        description = "Customize left-click of 'Crafting cape' in inventory",
+        section = leftClickSection
     )
     default EssenceRunningItemDropdown.CraftingCape craftingCape() {
         return EssenceRunningItemDropdown.CraftingCape.TELEPORT;
