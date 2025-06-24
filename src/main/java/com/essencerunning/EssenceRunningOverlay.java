@@ -67,6 +67,7 @@ public class EssenceRunningOverlay extends Overlay {
         }
         if (config.enableRunnerMode()) {
             switch (config.highlightTradeBindingNecklace()) {
+                case TWENTY_FOUR:
                 case TWENTY_FIVE:
                 case TWENTY_SIX:
                     if (matchFreeInventorySlots()) {

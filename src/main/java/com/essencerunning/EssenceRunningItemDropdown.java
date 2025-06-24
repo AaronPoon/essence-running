@@ -57,6 +57,7 @@ public class EssenceRunningItemDropdown {
     @RequiredArgsConstructor
     public enum HighlightTradeBindingNecklace {
         OFF("Off"),
+        TWENTY_FOUR("24 (Aether)"),
         TWENTY_FIVE("25"),
         TWENTY_SIX("26 (Pure)");
 
