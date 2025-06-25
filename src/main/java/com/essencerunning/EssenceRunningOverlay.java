@@ -1,11 +1,9 @@
 package com.essencerunning;
 
 import net.runelite.api.Client;
-import net.runelite.api.ItemID;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -41,14 +39,14 @@ public class EssenceRunningOverlay extends Overlay {
         renderBindingNecklace(graphics);
 
         if (config.enableRunnerMode()) {
-            final Widget chatbox = client.getWidget(WidgetInfo.CHATBOX);
+            final Widget chatbox = client.getWidget(InterfaceID.Chatbox.CHAT_BACKGROUND);
             if (config.highlightTradeSent() && chatbox != null && !chatbox.isHidden()) {
                 drawShape(graphics, chatbox.getBounds(), plugin.isTradeSent() ? Color.GREEN : Color.RED);
             }
 
             if (config.highlightRingOfDueling() && !plugin.isRingEquipped()) {
-                drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER), ItemID.RING_OF_DUELING8);
-                drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER), ItemID.RING_OF_DUELING8);
+                drawWidgetChildren(graphics, client.getWidget(InterfaceID.Bankmain.ITEMS), ItemID.RING_OF_DUELING_8);
+                drawWidgetChildren(graphics, client.getWidget(InterfaceID.Bankside.ITEMS), ItemID.RING_OF_DUELING_8);
             }
         }
 
@@ -59,19 +57,20 @@ public class EssenceRunningOverlay extends Overlay {
         if (config.enableRunecrafterMode()) {
             if (config.highlightEquipBindingNecklace() == EssenceRunningItemDropdown.HighlightEquipBindingNecklace.EQUIP) {
                 if (!plugin.isAmuletEquipped()) {
-                    drawWidgetChildren(graphics, client.getWidget(WidgetInfo.INVENTORY), ItemID.BINDING_NECKLACE);
-                    drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER), ItemID.BINDING_NECKLACE);
-                    drawWidgetChildren(graphics, client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER), ItemID.BINDING_NECKLACE);
+                    drawWidgetChildren(graphics, client.getWidget(InterfaceID.INVENTORY), ItemID.MAGIC_EMERALD_NECKLACE);
+                    drawWidgetChildren(graphics, client.getWidget(InterfaceID.Bankmain.ITEMS), ItemID.MAGIC_EMERALD_NECKLACE);
+                    drawWidgetChildren(graphics, client.getWidget(InterfaceID.Bankside.ITEMS), ItemID.MAGIC_EMERALD_NECKLACE);
                 }
             }
         }
         if (config.enableRunnerMode()) {
             switch (config.highlightTradeBindingNecklace()) {
+                case TWENTY_FOUR:
                 case TWENTY_FIVE:
                 case TWENTY_SIX:
                     if (matchFreeInventorySlots()) {
                         // Widget that contains the inventory while inside a trade transaction
-                        drawWidgetChildren(graphics, client.getWidget(WidgetID.PLAYER_TRADE_INVENTORY_GROUP_ID, 0), ItemID.BINDING_NECKLACE);
+                        drawWidgetChildren(graphics, client.getWidget(InterfaceID.Tradeside.SIDE_LAYER), ItemID.MAGIC_EMERALD_NECKLACE);
                     }
                     break;
                 default:
@@ -99,7 +98,7 @@ public class EssenceRunningOverlay extends Overlay {
 
     private boolean matchFreeInventorySlots() {
         // Widget that contains the trading partner's number of free inventory slots
-        final Widget freeSlots = client.getWidget(WidgetID.PLAYER_TRADE_SCREEN_GROUP_ID, 9);
+        final Widget freeSlots = client.getWidget(InterfaceID.Trademain.FREE_SPACE_TEXT);
         return freeSlots != null && freeSlots.getText().endsWith(config.highlightTradeBindingNecklace().getOption().split(" ")[0] + FREE_INVENTORY_SLOTS);
     }
 }
