@@ -3,9 +3,10 @@ package com.essencerunning;
 import com.google.common.collect.ArrayListMultimap;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
-import net.runelite.api.InventoryID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.Menu;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.events.MenuEntryAdded;
@@ -28,8 +29,8 @@ public class EssenceRunningUtils {
                             final String target,
                             final int index,
                             final boolean strict) {
-
-        final MenuEntry[] menuEntries = client.getMenuEntries();
+        Menu menu = client.getMenu();
+        final MenuEntry[] menuEntries = menu.getMenuEntries();
         final int thisIndex = findIndex(optionIndexes, menuEntries, index, optionB, target, strict);
         final int optionIdx = findIndex(optionIndexes, menuEntries, thisIndex, optionA, target, strict);
 
@@ -81,13 +82,14 @@ public class EssenceRunningUtils {
                              final MenuEntry[] entries,
                              final int index1,
                              final int index2) {
+        Menu menu = client.getMenu();
 
         final MenuEntry entry = entries[index1];
         entry.setType((entries[index2].getType()));
         entries[index1] = entries[index2];
         entries[index2] = entry;
 
-        client.setMenuEntries(entries);
+        menu.setMenuEntries(entries);
 
         // Rebuild option indexes
         optionIndexes.clear();
@@ -103,8 +105,8 @@ public class EssenceRunningUtils {
         // Deposit- op 2 is the current deposit amount 1/5/10/x
         if (menuEntryAdded.getType() == MenuAction.CC_OP.getId() && menuEntryAdded.getIdentifier() == 2
             && menuEntryAdded.getOption().startsWith("Deposit-")) {
-
-            final MenuEntry[] menuEntries = client.getMenuEntries();
+            Menu menu = client.getMenu();
+            final MenuEntry[] menuEntries = menu.getMenuEntries();
 
             // Find the extra menu option; they don't have fixed names, so check based on the menu identifier
             for (int i = menuEntries.length - 1; i >= 0; --i) {
@@ -120,7 +122,7 @@ public class EssenceRunningUtils {
                     menuEntries[i] = menuEntries[menuEntries.length - 1];
                     menuEntries[menuEntries.length - 1] = entry;
 
-                    client.setMenuEntries(menuEntries);
+                    menu.setMenuEntries(menuEntries);
                     break;
                 }
             }
@@ -128,7 +130,7 @@ public class EssenceRunningUtils {
     }
 
     public static boolean itemEquipped(final Client client, final EquipmentInventorySlot slot) {
-        final ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
+        final ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
         if (equipment != null) {
             final Item[] item = equipment.getItems();
             return item.length > slot.getSlotIdx()

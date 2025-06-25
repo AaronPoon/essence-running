@@ -1,8 +1,8 @@
 package com.essencerunning;
 
 import net.runelite.api.Client;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -36,7 +36,7 @@ public class EssenceRunningClanChatOverlay extends Overlay {
     public Dimension render(final Graphics2D graphics) {
         panelComponent.getChildren().clear();
 
-        final Widget chatbox = client.getWidget(WidgetInfo.CHATBOX_TRANSPARENT_LINES);
+        final Widget chatbox = client.getWidget(InterfaceID.Chatbox.CHAT_BACKGROUND);
         if (config.clanChatOverlayHeight().getOption() > 0 && chatbox != null && !chatbox.isHidden()) {
             panelComponent.setPreferredSize(new Dimension(chatbox.getWidth(), 0));
             plugin.getClanMessages().values().forEach(message -> panelComponent.getChildren().add(LineComponent.builder().left(message).build()));
