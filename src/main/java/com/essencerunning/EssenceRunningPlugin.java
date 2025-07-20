@@ -7,9 +7,10 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ObjectID;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -117,7 +118,8 @@ public class EssenceRunningPlugin extends Plugin {
             return;
         }
 
-        final MenuEntry[] menuEntries = client.getMenuEntries();
+        final Menu menu = client.getMenu();
+        final MenuEntry[] menuEntries = menu.getMenuEntries();
 
         // Build option map for quick lookup in findIndex
         int idx = 0;
@@ -148,7 +150,7 @@ public class EssenceRunningPlugin extends Plugin {
 
         String optionA = null;
 
-        if (client.getWidget(WidgetInfo.BANK_CONTAINER) != null) {
+        if (client.getWidget(InterfaceID.Bankmain.ITEMS_CONTAINER) != null) {
             final EssenceRunningItem item = EssenceRunningItem.of(target);
             if (config.swapBankWithdrawOp() && item != null) {
                 optionA = "Withdraw-" + item.getWithdrawQuantity();
@@ -190,7 +192,7 @@ public class EssenceRunningPlugin extends Plugin {
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked menuOptionClicked) {
         if (config.enableRunecrafterMode() && config.preventFireRunes()) {
-            if (menuOptionClicked.getId() == ObjectID.ALTAR_34764 // Fire Altar
+            if (menuOptionClicked.getId() == ObjectID.FIRE_ALTAR // Fire Altar
                     && menuOptionClicked.getMenuAction() == MenuAction.GAME_OBJECT_FIRST_OPTION) { // Craft-rune
                 menuOptionClicked.consume();
                 client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Essence Running has prevented you from accidentally creating Fire Runes!", "");
@@ -199,7 +201,7 @@ public class EssenceRunningPlugin extends Plugin {
         if (config.enableRunnerMode() && config.preventTradeCancel()) {
             final String option = Text.removeTags(menuOptionClicked.getMenuOption()).toLowerCase();
             final String target = Text.removeTags(menuOptionClicked.getMenuTarget()).toLowerCase();
-            final Widget textField = client.getWidget(334, 4);
+            final Widget textField = client.getWidget(InterfaceID.Tradeconfirm.TITLE);
             if (textField != null && textField.getText().equals(WAITING_OTHER_PLAYER) &&
                     ((target.startsWith("crafting cape") && option.equals("teleport"))
                             || (target.startsWith("ring of dueling") && option.equals("pvp arena"))
@@ -232,7 +234,7 @@ public class EssenceRunningPlugin extends Plugin {
 
     @Subscribe
     public void onItemContainerChanged(final ItemContainerChanged event) {
-        if (event.getItemContainer() == client.getItemContainer(InventoryID.EQUIPMENT)) {
+        if (event.getItemContainer() == client.getItemContainer(InventoryID.WORN)) {
             amuletEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.AMULET);
             ringEquipped = EssenceRunningUtils.itemEquipped(client, EquipmentInventorySlot.RING);
         }
@@ -313,7 +315,7 @@ public class EssenceRunningPlugin extends Plugin {
 
     @Subscribe
     public void onWidgetLoaded(final WidgetLoaded event) {
-        if (event.getGroupId() == WidgetID.PLAYER_TRADE_SCREEN_GROUP_ID) {
+        if (event.getGroupId() == InterfaceID.TRADEMAIN) {
             tradeSent = false;
         }
     }
